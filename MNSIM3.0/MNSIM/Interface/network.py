@@ -166,7 +166,7 @@ class NetworkGraph(nn.Module):
             assert len(input_index) in [1, 2]
                 # default: support resnet, thus the input_index has two values at most, for other networks with more branches, modify this value
             # print(tensor_list[input_index[0]+i+1].shape)
-           
+            #embed()
             if len(input_index) == 1:
                 tensor_list.append(layer.structure_forward(tensor_list[input_index[0] + i + 1]))
             else:
@@ -234,6 +234,10 @@ class NetworkGraph(nn.Module):
                 elif layer_config['type'] == 'fc':
                     split_len = hardware_config['xbar_size']
                 elif layer_config['type'] == 'MM':
+                    split_len = hardware_config['xbar_size']
+                elif layer_config['type'] == 'MM1':
+                    split_len = hardware_config['xbar_size']
+                elif layer_config['type'] == 'MM2':
                     split_len = hardware_config['xbar_size']
                 else:
                     print(layer_config['type'])
@@ -363,7 +367,7 @@ def get_net(hardware_config = None, cate = 'lenet', num_classes = 10):
     # add new NN models here (conv/fc is followed by one bn layer automatically):
     #assert cate in ['lenet', 'vgg16', 'vgg8', 'alexnet', 'resnet18']
    
-    assert cate in ['lenet', 'vgg16', 'vgg8', 'vgg8_Imagenet', 'alexnet', 'alexnet_Imagenet', 'resnet18', 'resnet18_Imagenet', 'EfficientNet','Attention_example','decoder']
+    assert cate in ['lenet', 'vgg16', 'vgg8', 'vgg8_Imagenet', 'alexnet', 'alexnet_Imagenet', 'resnet18', 'resnet18_Imagenet', 'EfficientNet','Attention_example','decoder','LLaMa-decoder','MM_bert_tiny','MM_bert_mini','resnet50_layer_Imagenet_test']
 
     if cate.startswith('lenet'):
         layer_config_list.append({'type': 'conv', 'in_channels': 3, 'out_channels': 6, 'kernel_size': 5})
@@ -419,9 +423,8 @@ def get_net(hardware_config = None, cate = 'lenet', num_classes = 10):
         # layer_config_list.append({'type': 'relu'})
         # layer_config_list.append({'type': 'fc', 'in_features': 4096, 'out_features': num_classes})
     elif cate.startswith('vgg8_Imagenet'):
-        layer_config_list.append({'type': 'conv', 'in_channels': 3, 'out_channels': 128, 'kernel_size': 7, 'padding': 0, 'stride': 7})
+        layer_config_list.append({'type': 'conv', 'in_channels': 3, 'out_channels': 128, 'kernel_size': 3, 'padding': 1})
         layer_config_list.append({'type': 'relu'})
-        
         layer_config_list.append({'type': 'conv', 'in_channels': 128, 'out_channels': 128, 'kernel_size': 3, 'padding': 1})
         layer_config_list.append({'type': 'relu'})
         layer_config_list.append({'type': 'pooling', 'mode': 'MAX', 'kernel_size': 2, 'stride': 2})
@@ -462,28 +465,24 @@ def get_net(hardware_config = None, cate = 'lenet', num_classes = 10):
         layer_config_list.append({'type': 'view'})
         layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': num_classes})
     elif cate.startswith('alexnet_Imagenet'):
-        layer_config_list.append({'type': 'conv', 'in_channels': 3, 'out_channels': 64, 'kernel_size': 11, 'padding': 2, 'stride': 4})
+        layer_config_list.append({'type': 'conv', 'in_channels': 3, 'out_channels': 64, 'kernel_size': 3, 'padding': 1, 'stride': 2})
         layer_config_list.append({'type': 'relu'})
-        layer_config_list.append({'type': 'pooling', 'mode': 'MAX', 'kernel_size': 3, 'stride': 2})
-        layer_config_list.append({'type': 'conv', 'in_channels': 64, 'out_channels': 192, 'kernel_size': 5, 'padding': 2})
+        layer_config_list.append({'type': 'pooling', 'mode': 'MAX', 'kernel_size': 2, 'stride': 2})
+        layer_config_list.append({'type': 'conv', 'in_channels': 64, 'out_channels': 192, 'kernel_size': 3, 'padding': 1})
         layer_config_list.append({'type': 'relu'})
-        layer_config_list.append({'type': 'pooling', 'mode': 'MAX', 'kernel_size': 3, 'stride': 2})
+        layer_config_list.append({'type': 'pooling', 'mode': 'MAX', 'kernel_size': 2, 'stride': 2})
         layer_config_list.append({'type': 'conv', 'in_channels': 192, 'out_channels': 384, 'kernel_size': 3, 'padding': 1})
         layer_config_list.append({'type': 'relu'})
         layer_config_list.append({'type': 'conv', 'in_channels': 384, 'out_channels': 256, 'kernel_size': 3, 'padding': 1})
         layer_config_list.append({'type': 'relu'})
         layer_config_list.append({'type': 'conv', 'in_channels': 256, 'out_channels': 256, 'kernel_size': 3, 'padding': 1})
         layer_config_list.append({'type': 'relu'})
-        layer_config_list.append({'type': 'pooling', 'mode': 'MAX', 'kernel_size': 3, 'stride': 2})
-        #layer_config_list.append({'type': 'pooling', 'mode': 'ADA', 'kernel_size': 1, 'stride': 1})
+        layer_config_list.append({'type': 'pooling', 'mode': 'MAX', 'kernel_size': 2, 'stride': 2})
         layer_config_list.append({'type': 'view'})
+        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 512})
         layer_config_list.append({'type': 'dropout'})
-        layer_config_list.append({'type': 'fc', 'in_features': 9216, 'out_features': 4096})
         layer_config_list.append({'type': 'relu'})
-        layer_config_list.append({'type': 'dropout'})
-        layer_config_list.append({'type': 'fc', 'in_features': 4096, 'out_features': 4096})
-        layer_config_list.append({'type': 'relu'})
-        layer_config_list.append({'type': 'fc', 'in_features': 4096, 'out_features': num_classes})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': num_classes})
     elif cate.startswith('alexnet'):
         layer_config_list.append({'type': 'conv', 'in_channels': 3, 'out_channels': 64, 'kernel_size': 3, 'padding': 1, 'stride': 2})
         layer_config_list.append({'type': 'relu'})
@@ -504,9 +503,9 @@ def get_net(hardware_config = None, cate = 'lenet', num_classes = 10):
         layer_config_list.append({'type': 'relu'})
         layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': num_classes})
     elif cate.startswith('resnet18_Imagenet'):
-        layer_config_list.append({'type': 'conv', 'in_channels': 3, 'out_channels': 64, 'kernel_size': 7, 'padding': 3, 'stride': 2})
+        layer_config_list.append({'type': 'conv', 'in_channels': 3, 'out_channels': 64, 'kernel_size': 3, 'padding': 1, 'stride': 1})
         layer_config_list.append({'type': 'relu'})
-        layer_config_list.append({'type': 'pooling', 'mode': 'MAX', 'kernel_size': 3, 'stride': 2, 'padding': 1})
+        layer_config_list.append({'type': 'pooling', 'mode': 'MAX', 'kernel_size': 2, 'stride': 2})
         # block 1
         layer_config_list.append({'type': 'conv', 'in_channels': 64, 'out_channels': 64, 'kernel_size': 3, 'padding': 1, 'stride': 1})
         layer_config_list.append({'type': 'relu'})
@@ -524,7 +523,7 @@ def get_net(hardware_config = None, cate = 'lenet', num_classes = 10):
         layer_config_list.append({'type': 'conv', 'in_channels': 64, 'out_channels': 128, 'kernel_size': 3, 'padding': 1, 'stride': 2})
         layer_config_list.append({'type': 'relu'})
         layer_config_list.append({'type': 'conv', 'in_channels': 128, 'out_channels': 128, 'kernel_size': 3, 'padding': 1, 'stride': 1})
-        layer_config_list.append({'type': 'conv', 'in_channels': 64, 'out_channels': 128, 'kernel_size': 1, 'padding': 0, 'stride': 2, 'input_index': [-4]})
+        layer_config_list.append({'type': 'conv', 'in_channels': 64, 'out_channels': 128, 'kernel_size': 3, 'padding': 1, 'stride': 2, 'input_index': [-4]})
         layer_config_list.append({'type': 'element_sum', 'input_index': [-1, -2]})
         layer_config_list.append({'type': 'relu'})
         # block 4
@@ -537,7 +536,7 @@ def get_net(hardware_config = None, cate = 'lenet', num_classes = 10):
         layer_config_list.append({'type': 'conv', 'in_channels': 128, 'out_channels': 256, 'kernel_size': 3, 'padding': 1, 'stride': 2})
         layer_config_list.append({'type': 'relu'})
         layer_config_list.append({'type': 'conv', 'in_channels': 256, 'out_channels': 256, 'kernel_size': 3, 'padding': 1, 'stride': 1})
-        layer_config_list.append({'type': 'conv', 'in_channels': 128, 'out_channels': 256, 'kernel_size': 1, 'padding': 0, 'stride': 2, 'input_index': [-4]})
+        layer_config_list.append({'type': 'conv', 'in_channels': 128, 'out_channels': 256, 'kernel_size': 3, 'padding': 1, 'stride': 2, 'input_index': [-4]})
         layer_config_list.append({'type': 'element_sum', 'input_index': [-1, -2]})
         layer_config_list.append({'type': 'relu'})
         # block 6
@@ -550,7 +549,7 @@ def get_net(hardware_config = None, cate = 'lenet', num_classes = 10):
         layer_config_list.append({'type': 'conv', 'in_channels': 256, 'out_channels': 512, 'kernel_size': 3, 'padding': 1, 'stride': 2})
         layer_config_list.append({'type': 'relu'})
         layer_config_list.append({'type': 'conv', 'in_channels': 512, 'out_channels': 512, 'kernel_size': 3, 'padding': 1, 'stride': 1})
-        layer_config_list.append({'type': 'conv', 'in_channels': 256, 'out_channels': 512, 'kernel_size': 1, 'padding': 0, 'stride': 2, 'input_index': [-4]})
+        layer_config_list.append({'type': 'conv', 'in_channels': 256, 'out_channels': 512, 'kernel_size': 3, 'padding': 1, 'stride': 2, 'input_index': [-4]})
         layer_config_list.append({'type': 'element_sum', 'input_index': [-1, -2]})
         layer_config_list.append({'type': 'relu'})
         # block 8
@@ -560,8 +559,10 @@ def get_net(hardware_config = None, cate = 'lenet', num_classes = 10):
         layer_config_list.append({'type': 'element_sum', 'input_index': [-1, -4]})
         layer_config_list.append({'type': 'relu'})
         # output
-        layer_config_list.append({'type': 'pooling', 'mode': 'ADA', 'kernel_size': 7, 'stride': 1})
         layer_config_list.append({'type': 'view'})
+        layer_config_list.append({'type': 'fc', 'in_features': 2048, 'out_features': 512})
+        layer_config_list.append({'type': 'dropout'})
+        layer_config_list.append({'type': 'relu'})
         layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': num_classes})
     elif cate.startswith('resnet18'):
         layer_config_list.append({'type': 'conv', 'in_channels': 3, 'out_channels': 64, 'kernel_size': 3, 'padding': 1, 'stride': 1})
@@ -969,65 +970,608 @@ def get_net(hardware_config = None, cate = 'lenet', num_classes = 10):
         layer_config_list.append({'type':'MM','input1_size':[300,4096],'input2_size':[4096,4096],'features':4096})
         # MM should change into 2types
         
+    elif cate.startswith('test_decoder'):
+        #self-attention
+        #WQXn+1
+        
+        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 256,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 256,'input_index': [-2]})
+        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 256,'input_index': [-3]})
+        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 256,'input_index': [-4]})
+        #1024*300
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 100,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 100,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 100,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 100,'input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        #mul with V:
+        layer_config_list.append({'type': 'fc', 'in_features': 100, 'out_features': 256,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 100, 'out_features': 256,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 100, 'out_features': 256,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 100, 'out_features': 256,'input_index': [-4]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-4]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-6]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 1024,'input_index': [-1]})
+        #encoder-decoder attention
+        #WQXn+1
+        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 256,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 256,'input_index': [-2]})
+        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 256,'input_index': [-3]})
+        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 256,'input_index': [-4]})
+        #1024*300
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 100,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 100,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 100,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 100,'input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        #mul with V:
+        layer_config_list.append({'type': 'fc', 'in_features': 100, 'out_features': 256,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 100, 'out_features': 256,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 100, 'out_features': 256,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 100, 'out_features': 256,'input_index': [-4]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-4]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-6]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 1024,'input_index': [-1]})
+        # the ffn
+        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 1024,'input_index': [-1]})
+    elif cate.startswith('bert_tiny'):
+        #self-attention
+        #WQXn+1
+        
+        layer_config_list.append({'type': 'fc', 'in_features': 128, 'out_features': 64,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 128, 'out_features': 64,'input_index': [-2]})
+        layer_config_list.append({'type': 'fc', 'in_features': 128, 'out_features': 64,'input_index': [-3]})
+        layer_config_list.append({'type': 'fc', 'in_features': 128, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 128, 'out_features': 64,'input_index': [-5]})
+        layer_config_list.append({'type': 'fc', 'in_features': 128, 'out_features': 64,'input_index': [-6]})
+        #1024*300
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-6]})
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-6]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-2]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-2]})
+        #mul with V:
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-2]})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-2]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type': 'fc', 'in_features': 128, 'out_features': 128,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 128, 'out_features': 512,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 128,'input_index': [-1]})
+        #encoder-decoder attention
+        #WQXn+1
+        layer_config_list.append({'type': 'fc', 'in_features': 128, 'out_features': 64,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 128, 'out_features': 64,'input_index': [-2]})
+        layer_config_list.append({'type': 'fc', 'in_features': 128, 'out_features': 64,'input_index': [-3]})
+        layer_config_list.append({'type': 'fc', 'in_features': 128, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 128, 'out_features': 64,'input_index': [-5]})
+        layer_config_list.append({'type': 'fc', 'in_features': 128, 'out_features': 64,'input_index': [-6]})
+        #1024*300
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-6]})
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-6]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-2]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-2]})
+        #mul with V:
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-2]})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-2]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type': 'fc', 'in_features': 128, 'out_features': 128,'input_index': [-1]})
+        # the ffn
+        layer_config_list.append({'type': 'fc', 'in_features': 128, 'out_features': 512,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 128,'input_index': [-1]})
+    elif cate.startswith('bert_mini'):
+        #self-attention
+        #WQXn+1
+        
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-2]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-3]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-5]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-6]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-7]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-8]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-9]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-10]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-11]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-12]})
+        #1024*300
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-12]})
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-12]})
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-12]})
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-12]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        #mul with V:
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-4]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-4]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-6]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 256,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 1024,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 256,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-2]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-3]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-5]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-6]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-7]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-8]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-9]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-10]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-11]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-12]})
+        #1024*300
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-12]})
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-12]})
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-12]})
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-12]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        #mul with V:
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-4]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-4]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-6]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 256,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 1024,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 256,'input_index': [-1]})
+
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-2]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-3]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-5]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-6]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-7]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-8]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-9]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-10]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-11]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-12]})
+        #1024*300
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-12]})
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-12]})
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-12]})
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-12]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        #mul with V:
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-4]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-4]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-6]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 256,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 1024,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 256,'input_index': [-1]})
+
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-2]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-3]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-5]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-6]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-7]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-8]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-9]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-10]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-11]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 64,'input_index': [-12]})
+        #1024*300
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-12]})
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-12]})
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-12]})
+        layer_config_list.append({'type': 'fc', 'in_features': 64, 'out_features': 512,'input_index': [-12]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        #mul with V:
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-4]})
+        layer_config_list.append({'type': 'fc', 'in_features': 512, 'out_features': 64,'input_index': [-4]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-4]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-6]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 256,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 256, 'out_features': 1024,'input_index': [-1]})
+        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 256,'input_index': [-1]})
+    elif cate.startswith('MM_bert_tiny'):
+        #self-attention
+        #WQXn+1
+        layer_config_list.append({'type':'MM1','input1_size':[512,128],'input2_size':[128,384],'features':384,'input_index': [-1]})
+        #1024*300
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-2]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-2]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-2]})
+        #mul with V:
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-2]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-2]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type':'MM1','input1_size':[512,128],'input2_size':[128,128],'features':128,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,128],'input2_size':[128,512],'features':512,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,125],'features':128,'input_index': [-1]})
+        #encoder-decoder attention
+        #self-attention
+        #WQXn+1
+        layer_config_list.append({'type':'MM1','input1_size':[512,128],'input2_size':[128,384],'features':384,'input_index': [-1]})
+        #1024*300
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-2]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-2]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-2]})
+        #mul with V:
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-2]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-2]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type':'MM1','input1_size':[512,128],'input2_size':[128,128],'features':128,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,128],'input2_size':[128,512],'features':512,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,128],'features':128,'input_index': [-1]})
+        #encoder-decoder attention
     elif cate.startswith('decoder'):
         #self-attention
         #WQXn+1
         
-        layer_config_list.append({'type': 'fc', 'in_features': 4096, 'out_features': 1024,'input_index': [-1]})
-        layer_config_list.append({'type': 'fc', 'in_features': 4096, 'out_features': 1024,'input_index': [-2]})
-        layer_config_list.append({'type': 'fc', 'in_features': 4096, 'out_features': 1024,'input_index': [-3]})
-        layer_config_list.append({'type': 'fc', 'in_features': 4096, 'out_features': 1024,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-2]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-3]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-5]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-6]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-7]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-8]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-9]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-10]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-11]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-12]})
         #1024*300
-        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 300,'input_index': [-4]})
-        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 300,'input_index': [-4]})
-        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 300,'input_index': [-4]})
-        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 300,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-12]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-12]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-12]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-12]})
         layer_config_list.append({'type': 'Softmax','input_index': [-4]})
         layer_config_list.append({'type': 'Softmax','input_index': [-4]})
         layer_config_list.append({'type': 'Softmax','input_index': [-4]})
         layer_config_list.append({'type': 'Softmax','input_index': [-4]})
-        #mul with V:
-        layer_config_list.append({'type': 'fc', 'in_features': 300, 'out_features': 1024,'input_index': [-4]})
-        layer_config_list.append({'type': 'fc', 'in_features': 300, 'out_features': 1024,'input_index': [-4]})
-        layer_config_list.append({'type': 'fc', 'in_features': 300, 'out_features': 1024,'input_index': [-4]})
-        layer_config_list.append({'type': 'fc', 'in_features': 300, 'out_features': 1024,'input_index': [-4]})
-        # concat
-        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
-        layer_config_list.append({'type':'concat','input_index': [-1,-4]})
-        layer_config_list.append({'type':'concat','input_index': [-1,-6]})
-        #shape:1*300
-        #the linear after multi-head
-        layer_config_list.append({'type': 'fc', 'in_features': 4096, 'out_features': 4096,'input_index': [-1]})
-        #encoder-decoder attention
-        #WQXn+1
-        layer_config_list.append({'type': 'fc', 'in_features': 4096, 'out_features': 1024,'input_index': [-1]})
-        layer_config_list.append({'type': 'fc', 'in_features': 4096, 'out_features': 1024,'input_index': [-2]})
-        layer_config_list.append({'type': 'fc', 'in_features': 4096, 'out_features': 1024,'input_index': [-3]})
-        layer_config_list.append({'type': 'fc', 'in_features': 4096, 'out_features': 1024,'input_index': [-4]})
-        #1024*300
-        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 300,'input_index': [-1]})
-        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 300,'input_index': [-2]})
-        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 300,'input_index': [-3]})
-        layer_config_list.append({'type': 'fc', 'in_features': 1024, 'out_features': 300,'input_index': [-4]})
-        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
-        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
-        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
-        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
-        #mul with V:
-        layer_config_list.append({'type': 'fc', 'in_features': 300, 'out_features': 1024,'input_index': [-4]})
-        layer_config_list.append({'type': 'fc', 'in_features': 300, 'out_features': 1024,'input_index': [-4]})
-        layer_config_list.append({'type': 'fc', 'in_features': 300, 'out_features': 1024,'input_index': [-4]})
-        layer_config_list.append({'type': 'fc', 'in_features': 300, 'out_features': 1024,'input_index': [-4]})
-        # concat
-        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
-        layer_config_list.append({'type':'concat','input_index': [-1,-4]})
-        layer_config_list.append({'type':'concat','input_index': [-1,-6]})
-        #shape:1*300
-        #the linear after multi-head
-        layer_config_list.append({'type': 'fc', 'in_features': 4096, 'out_features': 4096,'input_index': [-1]})
-        # the ffn
-        layer_config_list.append({'type': 'fc', 'in_features': 4096, 'out_features': 4096,'input_index': [-1]})
         
+        #mul with V:
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-4]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-6]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,256],'features':256,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,1024],'features':1024,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,1024],'input2_size':[1024,256],'features':256,'input_index': [-1]})
+        
+        #WQXn+1
+        
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-2]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-3]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-5]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-6]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-7]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-8]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-9]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-10]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-11]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-12]})
+        #1024*300
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-12]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-12]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-12]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-12]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        
+        #mul with V:
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-4]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-6]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,256],'features':256,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,1024],'features':1024,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,1024],'input2_size':[1024,256],'features':256,'input_index': [-1]})
+
+        #WQXn+1
+        
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-2]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-3]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-5]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-6]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-7]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-8]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-9]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-10]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-11]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-12]})
+        #1024*300
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-12]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-12]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-12]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-12]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        
+        #mul with V:
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-4]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-6]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,256],'features':256,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,1024],'features':1024,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,1024],'input2_size':[1024,256],'features':256,'input_index': [-1]})
+
+        #WQXn+1
+        
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-2]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-3]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-5]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-6]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-7]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-8]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-9]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-10]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-11]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,64],'features':64,'input_index': [-12]})
+        #1024*300
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-12]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-12]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-12]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-12]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        
+        #mul with V:
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-4]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-6]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,256],'features':256,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,1024],'features':1024,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,1024],'input2_size':[1024,256],'features':256,'input_index': [-1]})
+    elif cate.startswith('MM_bert_mini'):
+        #self-attention
+        #WQXn+1
+        
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,768],'features':768,'input_index': [-1]})
+
+        #1024*300
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-2]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-3]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        
+        #mul with V:
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-4]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-6]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,256],'features':256,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,1024],'features':1024,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,1024],'input2_size':[1024,256],'features':256,'input_index': [-1]})
+        
+        #WQXn+1
+        
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,768],'features':768,'input_index': [-1]})
+
+        #1024*300
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-2]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-3]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        
+        #mul with V:
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-4]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-6]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,256],'features':256,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,1024],'features':1024,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,1024],'input2_size':[1024,256],'features':256,'input_index': [-1]})
+
+        #WQXn+1
+        
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,768],'features':768,'input_index': [-1]})
+
+        #1024*300
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-2]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-3]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        
+        #mul with V:
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-4]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-6]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,256],'features':256,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,1024],'features':1024,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,1024],'input2_size':[1024,256],'features':256,'input_index': [-1]})
+
+        #WQXn+1
+        
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,768],'features':768,'input_index': [-1]})
+
+        #1024*300
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-2]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-3]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,64],'input2_size':[64,512],'features':512,'input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        layer_config_list.append({'type': 'Softmax','input_index': [-4]})
+        
+        #mul with V:
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,64],'features':64,'input_index': [-4]})
+        # concat
+        layer_config_list.append({'type':'concat','input_index': [-1,-2]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-4]})
+        layer_config_list.append({'type':'concat','input_index': [-1,-6]})
+        #shape:1*300
+        #the linear after multi-head
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,256],'features':256,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,1024],'features':1024,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,1024],'input2_size':[1024,256],'features':256,'input_index': [-1]})
+    elif cate.startswith('LLaMa-decoder'):
+        layer_config_list.append({'type':'MM1','input1_size':[2048,4096],'input2_size':[4096,128],'features':128,'input_index': [-1]})
+        for i in range(96):
+            layer_config_list.append({
+                'type': 'MM1','input1_size': [2048, 4096],'input2_size': [4096, 128],'features': 128,'input_index': [-1-i]
+            })
+        #Q*KT
+        for i in range(32):
+            layer_config_list.append({
+                'type': 'MM1','input1_size': [2048, 128],'input2_size': [128, 2048],'features': 2048,'input_index': [-96]
+            })
+        for i in range(32):
+            layer_config_list.append({
+                'type': 'Softmax','input_index': [-32]
+            })
+        #S*V
+        for i in range(32):
+            layer_config_list.append({
+                'type': 'MM1','input1_size': [2048, 2048],'input2_size': [2048, 128],'features': 128,'input_index': [-32]
+            })
+        for i in range(31):
+            layer_config_list.append({
+                'type':'concat','input_index': [-1,-2*(i+1)]
+            })
+        #the linear after multi-head
+        layer_config_list.append({'type':'MM1','input1_size':[2048,4096],'input2_size':[4096,4096],'features':4096,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[2048,4096],'input2_size':[4096,11008],'features':11008,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[2048,11008],'input2_size':[11008,4096],'features':4096,'input_index': [-1]})
+    elif cate.startswith('resnet50_layer_Imagenet_test'):
+        # block 5
+        # (1, 512, 28, 28)
+        # layer_config_list.append({'type': 'conv', 'in_channels': 512, 'out_channels': 128, 'kernel_size': 1, 'padding': 1, 'stride': 1})
+        # layer_config_list.append({'type': 'relu'})
+        # layer_config_list.append({'type': 'conv', 'in_channels': 128, 'out_channels': 128, 'kernel_size': 3, 'padding': 1, 'stride': 1})
+        # (28*28, 128*9) = (784, 1152)
+        layer_config_list.append({'type': 'MM1', 'input1_size': [784, 1152], 'input2_size': [1152, 128], 'features':128,'input_index': [-1]})
     else:
         assert 0, f'not support {cate}'
     
@@ -1040,6 +1584,16 @@ def get_net(hardware_config = None, cate = 'lenet', num_classes = 10):
                 # by default: the inputs of the current layer come from the outputs of the previous layer
     if cate.endswith('Imagenet'):
         input_params = {'activation_scale': 1. / 255., 'activation_bit': 9, 'input_shape': (1, 3, 224, 224)}
+    elif cate.startswith('resnet50_layer_Imagenet_test'):
+        input_params = {'activation_scale': 1. / 255., 'activation_bit': 9, 'input_shape': (1, 784, 1152)}
+    elif cate.startswith('decoder'):
+        input_params = {'activation_scale': 1. / 255., 'activation_bit': 9, 'input_shape': (1, 512, 256)}
+    elif cate.startswith('MM_bert_tiny'):
+        input_params = {'activation_scale': 1. / 255., 'activation_bit': 9, 'input_shape': (1, 512, 128)}
+    elif cate.startswith('MM_bert_mini'):
+        input_params = {'activation_scale': 1. / 255., 'activation_bit': 9, 'input_shape': (1, 512, 256)}
+    elif cate.startswith('LLaMa'):
+        input_params = {'activation_scale': 1. / 255., 'activation_bit': 9, 'input_shape': (1, 2048, 4096)}
     else:
         input_params = {'activation_scale': 1. / 255., 'activation_bit': 9, 'input_shape': (1, 3, 32, 32)}
         # change the input_shape according to datasets

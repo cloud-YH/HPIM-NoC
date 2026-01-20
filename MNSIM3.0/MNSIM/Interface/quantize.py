@@ -2,7 +2,7 @@
 import collections
 import copy
 import math
-
+from IPython import embed
 import numpy as np
 import torch
 import torch.nn as nn
@@ -153,6 +153,36 @@ class QuantizeLayer(nn.Module):
             #print("heiheihei",len(in_features_list),complete_bar_num)
             self.sublayer_list = nn.ModuleList([nn.Linear(i, self.layer_config['out_features'], None) for i in in_features_list])
             self.split_input = self.hardware_config['xbar_size']
+        elif self.layer_config['type'] == 'MM1':
+            assert 'input1_size' in self.layer_config.keys()
+            #take input1_size as weight
+            in_features=self.layer_config['input1_size'][1]
+            complete_bar_num = in_features// self.hardware_config['xbar_size']
+            residual_col_num = in_features% self.hardware_config['xbar_size']
+            if residual_col_num > 0:
+                in_features_list = [self.hardware_config['xbar_size']] * complete_bar_num + [residual_col_num]
+            else:
+                in_features_list = [self.hardware_config['xbar_size']] * complete_bar_num
+            
+            self.layer_config['extend_ADC_bitwidth'] = max(0,math.ceil(math.log2(min(in_features, self.hardware_config['xbar_size'])/self.hardware_config['DAC_num'])))
+            assert 'input2_size' in self.layer_config.keys()
+            self.sublayer_list = nn.ModuleList(MyModel_MM(i,self.layer_config) for i in in_features_list)
+            self.split_input = self.hardware_config['xbar_size']
+        elif self.layer_config['type'] == 'MM2':
+            assert 'input1_size' in self.layer_config.keys()
+            #take input1_size as weight
+            in_features=self.layer_config['input1_size'][1]
+            complete_bar_num = in_features// self.hardware_config['xbar_size']
+            residual_col_num = in_features% self.hardware_config['xbar_size']
+            if residual_col_num > 0:
+                in_features_list = [self.hardware_config['xbar_size']] * complete_bar_num + [residual_col_num]
+            else:
+                in_features_list = [self.hardware_config['xbar_size']] * complete_bar_num
+            
+            self.layer_config['extend_ADC_bitwidth'] = max(0,math.ceil(math.log2(min(in_features, self.hardware_config['xbar_size'])/self.hardware_config['DAC_num'])))
+            assert 'input2_size' in self.layer_config.keys()
+            self.sublayer_list = nn.ModuleList(MyModel_MM(i,self.layer_config) for i in in_features_list)
+            self.split_input = self.hardware_config['xbar_size']
         elif self.layer_config['type'] == 'MM':
             assert 'input1_size' in self.layer_config.keys()
             #take input1_size as weight
@@ -186,11 +216,18 @@ class QuantizeLayer(nn.Module):
         # TRADITION
         # get the layer structure
         #linqiushi modified
+
         if len(input)==1:
             input_shape = input.shape
             if self.layer_config['type']=='conv' or self.layer_config['type']=='fc':
                 input_list = torch.split(input, self.split_input, dim = 1)
-            elif self.layer_config['type']=='MM':
+            elif input_shape[2] == 768 and self.layer_config['type']=='MM1':
+                input_list = torch.split(input, 64, dim = 2)
+                input_shape = input_list[0].shape
+            elif input_shape[2] == 384 and self.layer_config['type']=='MM1':
+                input_list = torch.split(input, 64, dim = 2)
+                input_shape = input_list[0].shape
+            elif self.layer_config['type']=='MM' or self.layer_config['type']=='MM1' or self.layer_config['type']=='MM2':
                 input_list = torch.split(input, self.split_input, dim = 2)
             #print("zhegeyouruhe",self.layer_config['type'],input_shape,input[0].shape,self.split_input,len(input_list),len(self.sublayer_list))
             output = None
@@ -201,6 +238,7 @@ class QuantizeLayer(nn.Module):
                 else:
                     output.add_(self.sublayer_list[i](input_list[i]))
             output_shape = output.shape
+
             # layer_info
             # only conv and fc are QuantizeLayer
             self.layer_info = collections.OrderedDict()
@@ -229,6 +267,20 @@ class QuantizeLayer(nn.Module):
                 self.layer_info['Outputsize']=int(output_shape[0]*output_shape[1])
                 self.layer_info['input1_size']=self.layer_config['input1_size']
                 #set the key according to the needs
+            elif self.layer_config['type']== 'MM1':
+                self.layer_info['type'] = 'MM1'
+                self.layer_info['Infeature']=int(input_shape[2])
+                self.layer_info['Outfeature']=int(output_shape[2])
+                self.layer_info['Inputsize']=int(input_shape[1]*input_shape[2])
+                self.layer_info['Outputsize']=int(output_shape[1]*output_shape[2])
+                self.layer_info['input1_size']=self.layer_config['input1_size']
+            elif self.layer_config['type']== 'MM2':
+                self.layer_info['type'] = 'MM2'
+                self.layer_info['Infeature']=int(input_shape[2])
+                self.layer_info['Outfeature']=int(output_shape[2])
+                self.layer_info['Inputsize']=int(input_shape[1]*input_shape[2])
+                self.layer_info['Outputsize']=int(output_shape[1]*output_shape[2])
+                self.layer_info['input1_size']=self.layer_config['input1_size']
             else:
                 assert 0, f'not support {self.layer_config["type"]}'
             self.layer_info['Inputbit'] = int(self.bit_scale_list[0,0].item())
@@ -247,7 +299,7 @@ class QuantizeLayer(nn.Module):
             self.layer_info['Outputindex'] = [1]
             return output
         elif len(input)==2:
-            assert self.layer_config['type']=='MM'
+            assert self.layer_config['type']=='MM' or self.layer_config['type']=='MM1'
     def forward(self, input, method = 'SINGLE_FIX_TEST', adc_action = 'SCALE'):
         METHOD = method
        
@@ -301,7 +353,7 @@ class QuantizeLayer(nn.Module):
                     assert 0, f'not support depthwise'
             elif self.layer_config['type'] == 'fc':
                 output = F.linear(input, weight, None)
-            elif self.layer_config['type'] =='MM':
+            elif self.layer_config['type'] =='MM' or self.layer_config['type'] =='MM1' or self.layer_config['type'] =='MM2':
                 output = torch.matmul(input,weight.transpose(0,1))
             else:
                 assert 0, f'not support {self.layer_config["type"]}'
@@ -441,6 +493,12 @@ class QuantizeLayer(nn.Module):
                    
                     elif self.layer_config['type'] == 'fc':
                         tmp = F.linear(activation_in_container[i], weight_container[j], None)
+                    elif self.layer_config['type'] == 'MM':
+                        tmp = F.linear(activation_in_container[i], weight_container[j], None)
+                    elif self.layer_config['type'] == 'MM1':
+                        tmp = F.linear(activation_in_container[i], weight_container[j], None)
+                    elif self.layer_config['type'] == 'MM2':
+                        tmp = F.linear(activation_in_container[i], weight_container[j], None)
                     else:
                         assert 0, f'not support {self.layer_config["type"]}'
                     if adc_action == 'SCALE':
@@ -518,7 +576,7 @@ class QuantizeLayer(nn.Module):
 
     def extra_repr(self):
         return str(self.hardware_config) + ' ' + str(self.layer_config) + ' ' + str(self.quantize_config)
-QuantizeLayerStr = ['conv', 'fc','MM']
+QuantizeLayerStr = ['conv', 'fc', 'MM', 'MM1', 'MM2']
 
 class ViewLayer(nn.Module):
     def __init__(self):

@@ -352,6 +352,24 @@ def generate_zigzag_matrix_cmesh(row, column, c=2):
         start += 1
     return matrix,pos
 
+def generate_dynamic_matrix(row, column):
+    file_name = 'mapping_order.txt'
+    pos=np.zeros([row*column,2])
+    tile = 0
+    data = []
+    with open(file_name, 'r') as file:
+        for line in file:
+            row_data = [int(num) for num in line.split()]
+            for num in row_data:
+                pos[num][0]=tile//column
+                pos[num][1]=tile%column
+                tile = tile + 1
+                data.append(num)
+    matrix = np.array(data)
+    matrix = matrix.reshape((row, column))
+    
+    return matrix,pos
+
 class TCG():
     def __init__(self, NetStruct, SimConfig_path, multiple=None,mix_mode=0,mix_tile=None):
         # NetStruct: layer structure, SimConfig_path: Hardware config path, multiple: allocate more resources for some layers (i.e., duplicate)
@@ -383,6 +401,8 @@ class TCG():
             self.tile_num[1]=mix_tile.tile_num[1]
             self.c = mix_tile.c
             self.topology = mix_tile.topology
+        else:
+            self.topology = 0
         assert self.tile_num[0] > 0, "Tile number < 0"
         assert self.tile_num[1] > 0, "Tile number < 0"
         self.tile_total_num = self.tile_num[0] * self.tile_num[1]
@@ -675,7 +695,90 @@ class TCG():
                     data_outbuf = int(layer_dict['Outfeature']) * int(layer_dict['outputbit'])/8
                     # buffer_size: unit Byte
                     tmp_tileinfo['max_PE'] = min(tmp_tileinfo['PEnum'], self.tile.tile_PE_total_num)
+                elif layer_type == 'MM1':
+                    tmp_tileinfo['type'] = 'MM1'
+                    tmp_tileinfo['mx'] = math.ceil(weight_precision / self.tile.group_num) * math.ceil(int(layer_dict['Outfeature']) / self.tile.xbar_column)
+                        # mx: PE number in x-axis
+                    tmp_tileinfo['my'] = math.ceil(int(layer_dict['Infeature']) / self.tile.xbar_row)
+                        # my: PE number in y-axis
+                    mixmode3_area_count=0
+                    tile_max_row=[]
+                    tile_max_column=[]
+                    tile_device_type=[]
+                    temp_tilenum=0
+                    while(1):
+                        #mapping strategy
+                        i=mixmode3_tilecount//self.tile_num[0]
+                        j=mixmode3_tilecount-i*self.tile_num[0]  
+                        #able to change
+                        mixmode3_tilecount+=1
+                        if i>=self.tile_num[1] or j>=self.tile_num[0]:
+                            for m in range(self.tile_num[0]):
+                                for n in range(self.tile_num[1]):
+                                    self.mapping_result_rewrite[m][n].append(self.mapping_result[m][n])
+                            mixmode3_tilecount=0
+                            i=0
+                            j=0
+                            self.rewrite_mode=1
+                            if layer_id<self.whether_rewrite_layer:
+                                self.whether_rewrite_layer=layer_id
+                        temp_tilenum+=1
+                        if self.mixmode3_array[i][j]==1:
+                            tile_device_type.append('SRAM')
+                        elif self.mixmode3_array[i][j]==0:
+                            tile_device_type.append('NVM')
+                        tile_xbar_size.append(self.mixmode3_xbar_size[i][j])
+                        self.mapping_result[i][j]=layer_id
+                        tile_max_row.append(min(self.mixmode3_xbar_size[i][j],int(layer_dict['Infeature'])))
+                        
+                        tile_max_column.append(min(int(layer_dict['Infeature']),self.mixmode3_xbar_size[i][j] ))
+                        mixmode3_area_count+=(self.mixmode3_xbar_size[i][j]*self.mixmode3_xbar_size[i][j])*self.tile.tile_PE_total_num
+                        print(mixmode3_area_count,self.mixmode3_xbar_size[i][j],self.tile.tile_PE_total_num)
+                        if mixmode3_area_count> math.ceil(weight_precision / self.tile.group_num) * math.ceil(int(layer_dict['Outfeature']))*math.ceil(int(layer_dict['Infeature'])):
+                            
+                            tmp_tileinfo['tilenum']=temp_tilenum
+                            tmp_tileinfo['PEnum']=temp_tilenum*self.tile.tile_PE_total_num
+                            break
                     
+                    tmp_tileinfo['xbar_size']=tile_xbar_size   
+                    tmp_tileinfo['device_type']=tile_device_type                                
+                    tmp_tileinfo['max_group'] = min(weight_precision, self.tile.group_num)
+                        # max_group: maximum used groups in one PE of this layer
+                    tmp_tileinfo['tile_max_row']=tile_max_row
+                    tmp_tileinfo['tile_max_column']=tile_max_column
+                        # tile_max_row: maximum used row in one crossbar of this layer
+                        # tile_max_column: maximum used column in one crossbar of this layer
+                    tmp_tileinfo['max_row']=tile_max_row[0]
+                    tmp_tileinfo['max_column']=tile_max_column[0]
+                    if 'Inputindex' not in layer_dict.keys():
+                        tmp_tileinfo['Inputindex'] = [-1]
+                    else:
+                        tmp_tileinfo['Inputindex'] = list(map(int, layer_dict['Inputindex']))
+                        # Inputindex: the relative index of the input layers of this layer
+                    if 'Outputindex' not in layer_dict.keys():
+                        tmp_tileinfo['Outputindex'] = [1]
+                    else:
+                        tmp_tileinfo['Outputindex'] = list(map(int, layer_dict['Outputindex']))
+                        # Outputindex: the relative index of the output layers of this layer
+                    if len(tmp_tileinfo['Outputindex']) == 1:
+                        tmp_tileinfo['is_branchin'] = -1
+                    else:
+                        tmp_tileinfo['is_branchin'] = 1
+                    tmp_tileinfo['is_branchout'] = 1
+                    # is_branchout: if this layer is the output layer of a branch (the next layer is element_sum)
+                    for i in tmp_tileinfo['Outputindex']:
+                        if (i+layer_id) < self.layer_num:
+                            tmp_layer = self.net[i + layer_id][0][0]
+                            if (tmp_layer['type'] != 'element_sum' and tmp_layer['type']!= 'element_multiply'):
+                                tmp_tileinfo['is_branchout'] = -1
+                    # is_branchin: if this layer is the input layer of a branch
+                    input_size = int(layer_dict['Infeature'])
+                    inputchannel = 1
+                    data_inbuf = input_size * inputchannel * int(layer_dict['Inputbit'])/8
+                    data_outbuf = int(layer_dict['Outfeature']) * int(layer_dict['outputbit'])/8
+                    # buffer_size: unit Byte
+                    tmp_tileinfo['max_PE'] = min(tmp_tileinfo['PEnum'], self.tile.tile_PE_total_num)
+
                 elif layer_type == 'pooling':
                     tmp_tileinfo['type'] = 'pooling'
                     tmp_tileinfo['mx'] = 1
@@ -842,13 +945,13 @@ class TCG():
                     
                     tmp_tileinfo['tilenum'] = math.ceil(tmp_tileinfo['PEnum'] / self.tile.tile_PE_total_num)
                     tmp_tileinfo['max_PE'] = min(tmp_tileinfo['PEnum'], self.tile.tile_PE_total_num)
-                if layer_type == 'conv' or layer_type == 'fc':
+                if layer_type == 'conv' or layer_type == 'fc' or layer_type == 'MM1':
                     total_xbar_num =mixmode3_tilecount*self.tile.tile_PE_total_num * multiple[layer_id]
                 start_tileid += tmp_tileinfo['tilenum']
                 num.append(tmp_tileinfo['PEnum'])
                 self.layer_tileinfo.append(tmp_tileinfo)
             elif self.mix_mode==2 and mix_tile.auto_layer_mapping==1:
-                print("看看几次",layer_id,layer_type)
+                #print("看看几次",layer_id,layer_type)
                 if layer_type == 'conv':
                     tmp_tileinfo['type'] = 'conv'
                     tmp_tileinfo['mx'] = math.ceil(weight_precision / self.tile.group_num) * math.ceil(int(layer_dict['Outputchannel']) / self.tile.xbar_column)
@@ -1044,7 +1147,92 @@ class TCG():
                                     temp_max_PE[i][j]=temp_PE_num  
                     tmp_tileinfo['max_PE'] = temp_max_PE
                     print("图",layer_id,tmp_tileinfo['max_PE'][0])
-                    
+                elif layer_type == 'MM1':
+                    tmp_tileinfo['type'] = 'MM1'
+                    tmp_tileinfo['mx'] = math.ceil(weight_precision / self.tile.group_num) * math.ceil(int(layer_dict['Outfeature']) / self.tile.xbar_column)
+                        # mx: PE number in x-axis
+                    tmp_tileinfo['my'] = math.ceil(int(layer_dict['Infeature']) / self.tile.xbar_row)
+                        # my: PE number in y-axis
+                    mixmode2_area_count=0
+                    tile_max_row=[]
+                    tile_max_column=[]
+                    remain_area=math.ceil(weight_precision / self.tile.group_num) * math.ceil(int(layer_dict['Outfeature']))\
+                        *math.ceil(int(layer_dict['Infeature']))
+                    temp_tilenum=0
+                    while(1):
+                        #mapping strategy
+                        i=mixmode2_tilecount//mix_tile.tile_num[0]
+                        j=mixmode2_tilecount-i*mix_tile.tile_num[0] 
+                        #able to change
+                        mixmode2_tilecount+=1
+                        temp_tilenum+=1
+                        tile_xbar_size.append(mix_tile.xbar_size[i][j])
+                        tile_device_type.append(mix_tile.device_type)
+                        self.mapping_result[i][j]=layer_id
+                        tile_max_row.append(min(mix_tile.xbar_size[i][j],int(layer_dict['Infeature'])))
+                        
+                        tile_max_column.append(min(int(layer_dict['Infeature']),mix_tile.xbar_size[i][j]))
+                        mixmode2_area_count+=(mix_tile.xbar_size[i][j]**2)*mix_tile.PE_num[i][j]**2
+                        if mixmode2_area_count> math.ceil(weight_precision / self.tile.group_num) * math.ceil(int(layer_dict['Outfeature']))*math.ceil(int(layer_dict['Infeature'])):
+                            if temp_PE_num==0:
+                                temp_PE_num=math.ceil((weight_precision / self.tile.group_num) * math.ceil(int(layer_dict['Outfeature']))/mix_tile.xbar_size[i][j])\
+                                *math.ceil(int(layer_dict['Infeature'])/mix_tile.xbar_size[i][j])
+                            else:
+                                temp_PE_num+=math.ceil(remain_area/mix_tile.xbar_size[i][j]**2)
+                            tmp_tileinfo['tilenum']=temp_tilenum
+                            tmp_tileinfo['PEnum']=temp_PE_num
+                            break
+                        remain_area-=(mix_tile.xbar_size[i][j]**2)*mix_tile.PE_num[i][j]**2
+                        temp_PE_num+=mix_tile.PE_num[i][j]**2
+                    tmp_tileinfo['xbar_size']=tile_xbar_size   
+                    tmp_tileinfo['device_type']=tile_device_type                                
+                    tmp_tileinfo['max_group'] = min(weight_precision, self.tile.group_num)
+                        # max_group: maximum used groups in one PE of this layer
+                    tmp_tileinfo['tile_max_row']=tile_max_row
+                    tmp_tileinfo['tile_max_column']=tile_max_column
+                        # tile_max_row: maximum used row in one crossbar of this layer
+                        # tile_max_column: maximum used column in one crossbar of this layer
+                    tmp_tileinfo['max_row']=tile_max_row[0]
+                    tmp_tileinfo['max_column']=tile_max_column[0]
+                    if 'Inputindex' not in layer_dict.keys():
+                        tmp_tileinfo['Inputindex'] = [-1]
+                    else:
+                        tmp_tileinfo['Inputindex'] = list(map(int, layer_dict['Inputindex']))
+                        # Inputindex: the relative index of the input layers of this layer
+                    if 'Outputindex' not in layer_dict.keys():
+                        tmp_tileinfo['Outputindex'] = [1]
+                    else:
+                        tmp_tileinfo['Outputindex'] = list(map(int, layer_dict['Outputindex']))
+                        # Outputindex: the relative index of the output layers of this layer
+                    if len(tmp_tileinfo['Outputindex']) == 1:
+                        tmp_tileinfo['is_branchin'] = -1
+                    else:
+                        tmp_tileinfo['is_branchin'] = 1
+                    tmp_tileinfo['is_branchout'] = 1
+                    # is_branchout: if this layer is the output layer of a branch (the next layer is element_sum)
+                    for i in tmp_tileinfo['Outputindex']:
+                        if (i+layer_id) < self.layer_num:
+                            tmp_layer = self.net[i + layer_id][0][0]
+                            if (tmp_layer['type'] != 'element_sum' and tmp_layer['type']!= 'element_multiply'):
+                                tmp_tileinfo['is_branchout'] = -1
+                    # is_branchin: if this layer is the input layer of a branch
+                    input_size = int(layer_dict['Infeature'])
+                    inputchannel = 1
+                    data_inbuf = input_size * inputchannel * int(layer_dict['Inputbit'])/8
+                    data_outbuf = int(layer_dict['Outfeature']) * int(layer_dict['outputbit'])/8
+                    # buffer_size: unit Byte
+                    temp_max_PE=-1 * np.ones(self.tile_num)
+                    for i in range(len(temp_max_PE)):
+                        for j in range(len(temp_max_PE[i])):
+                            if self.mapping_result[i][j]==layer_id:
+                                if temp_PE_num>=mix_tile.PE_num[i][j]**2:
+                                    temp_max_PE[i][j]=mix_tile.PE_num[i][j]**2
+                                    temp_PE_num-=mix_tile.PE_num[i][j]**2
+                                else:
+                                    temp_max_PE[i][j]=temp_PE_num  
+                    tmp_tileinfo['max_PE'] = temp_max_PE
+                    print("图",layer_id,tmp_tileinfo['max_PE'][0])
+
                 elif layer_type == 'pooling':
                     tmp_tileinfo['type'] = 'pooling'
                     tmp_tileinfo['mx'] = 1
@@ -1184,7 +1372,7 @@ class TCG():
                     
                     tmp_tileinfo['tilenum'] = math.ceil(tmp_tileinfo['PEnum'] / self.tile.tile_PE_total_num)
                     tmp_tileinfo['max_PE'] = min(tmp_tileinfo['PEnum'], self.tile.tile_PE_total_num)
-                if layer_type == 'conv' or layer_type == 'fc':
+                if layer_type == 'conv' or layer_type == 'fc' or layer_type == 'MM1':
                     total_xbar_num =mixmode3_tilecount*self.tile.tile_PE_total_num * multiple[layer_id]
                 start_tileid += tmp_tileinfo['tilenum']
                 num.append(tmp_tileinfo['PEnum'])
@@ -1257,6 +1445,65 @@ class TCG():
                     tmp_tileinfo['max_PE'] = min(tmp_tileinfo['PEnum'], ((PE_num4)*(PE_num4)))
                 elif layer_type == 'fc':
                     tmp_tileinfo['type'] = 'fc'
+                    i=int(self.pos_mapping_order[mixmode4_tilecount][0])
+                    j=int(self.pos_mapping_order[mixmode4_tilecount][1])
+                    xbar_size4=0
+                    xbar_size4=mix_tile.xbar_size[i][j]
+                    tmp_tileinfo['device_type']=mix_tile.device_type[i][j]
+                    PE_num4=mix_tile.PE_num[i][j]
+                    tmp_tileinfo['xbar_size']=xbar_size4
+                    tmp_tileinfo['PE_num_tile']=(PE_num4)
+                    tmp_tileinfo['mx'] = math.ceil(weight_precision / self.tile.group_num) * math.ceil(int(layer_dict['Outfeature']) / xbar_size4)
+                        # mx: PE number in x-axis
+                    tmp_tileinfo['my'] = math.ceil(int(layer_dict['Infeature']) / xbar_size4)
+                        # my: PE number in y-axis
+                    tmp_tileinfo['max_group'] = min(weight_precision, self.tile.group_num)
+                        # max_group: maximum used groups in one PE of this layer
+                    tmp_tileinfo['max_row'] = min(int(layer_dict['Infeature']), xbar_size4)
+                        # max_row: maximum used row in one crossbar of this layer
+                    tmp_tileinfo['max_column'] = min(int(layer_dict['Outfeature']), xbar_size4)
+                        # max_row: maximum used column in one crossbar of this layer
+                    if 'Inputindex' not in layer_dict.keys():
+                        tmp_tileinfo['Inputindex'] = [-1]
+                    else:
+                        tmp_tileinfo['Inputindex'] = list(map(int, layer_dict['Inputindex']))
+                        # Inputindex: the relative index of the input layers of this layer
+                    if 'Outputindex' not in layer_dict.keys():
+                        tmp_tileinfo['Outputindex'] = [1]
+                    else:
+                        tmp_tileinfo['Outputindex'] = list(map(int, layer_dict['Outputindex']))
+                        # Outputindex: the relative index of the output layers of this layer
+                    if len(tmp_tileinfo['Outputindex']) == 1:
+                        tmp_tileinfo['is_branchin'] = -1
+                    else:
+                        tmp_tileinfo['is_branchin'] = 1
+                    tmp_tileinfo['is_branchout'] = 1
+                    # is_branchout: if this layer is the output layer of a branch (the next layer is element_sum)
+                    for i in tmp_tileinfo['Outputindex']:
+                        if (i+layer_id) < self.layer_num:
+                            tmp_layer = self.net[i + layer_id][0][0]
+                            if (tmp_layer['type'] != 'element_sum' and tmp_layer['type']!= 'element_multiply'):
+                                tmp_tileinfo['is_branchout'] = -1
+                    # is_branchin: if this layer is the input layer of a branch
+                    input_size = int(layer_dict['Infeature'])
+                    inputchannel = 1
+                    data_inbuf = input_size * inputchannel * int(layer_dict['Inputbit'])/8
+                    data_outbuf = int(layer_dict['Outfeature']) * int(layer_dict['outputbit'])/8
+                    tmp_tileinfo['PEnum'] = tmp_tileinfo['mx'] * tmp_tileinfo['my'] * multiple[layer_id]
+                    num.append(tmp_tileinfo['PEnum'])
+                    test_tile_num = math.ceil(tmp_tileinfo['PEnum'] / ((PE_num4)*(PE_num4)))
+                    tmp_tileinfo['inLayer_data']=int(layer_dict['Outfeature']) * int(layer_dict['outputbit'])/test_tile_num
+                    for k in range(mixmode4_tilecount,mixmode4_tilecount+test_tile_num):
+                        i=int(self.pos_mapping_order[k][0])
+                        j=int(self.pos_mapping_order[k][1])
+                        self.mapping_result[i][j]=layer_id
+                        if mix_tile.xbar_size[i][j]!=xbar_size4:
+                            assert 0,f'error in the mapping: not same tile in one layer'
+                    mixmode4_tilecount+=test_tile_num
+                    tmp_tileinfo['tilenum']=test_tile_num
+                    tmp_tileinfo['max_PE'] = min(tmp_tileinfo['PEnum'], ((PE_num4)*(PE_num4)))
+                elif layer_type == 'MM1':
+                    tmp_tileinfo['type'] = 'MM1'
                     i=int(self.pos_mapping_order[mixmode4_tilecount][0])
                     j=int(self.pos_mapping_order[mixmode4_tilecount][1])
                     xbar_size4=0
@@ -1454,7 +1701,7 @@ class TCG():
                     tmp_tileinfo['tilenum'] = math.ceil(tmp_tileinfo['PEnum'] / self.tile.tile_PE_total_num)
                     tmp_tileinfo['max_PE'] = min(tmp_tileinfo['PEnum'], self.tile.tile_PE_total_num)
                     start_tileid += tmp_tileinfo['tilenum']
-                if layer_type == 'conv' or layer_type == 'fc':
+                if layer_type == 'conv' or layer_type == 'fc' or layer_type == 'MM1':
                     total_xbar_num =mixmode3_tilecount*self.tile.tile_PE_total_num * multiple[layer_id]
                 start_tileid += tmp_tileinfo['tilenum']
                 num.append(tmp_tileinfo['PEnum'])
@@ -1502,6 +1749,7 @@ class TCG():
                             tmp_tileinfo['tilenum']=temp_tilenum
                             tmp_tileinfo['PEnum']=temp_PE_num
                             break
+
                     tmp_tileinfo['all_cap']=all_cap            
                     tmp_tileinfo['xbar_size']=tile_xbar_size                        
                     tmp_tileinfo['max_group'] = min(weight_precision, self.tile.group_num)
@@ -1621,6 +1869,98 @@ class TCG():
                         # is_branchin: if this layer is the input layer of a branch
                     tmp_tileinfo['is_branchout'] = 1
                         # is_branchout: if this layer is the output layer of a branch (the next layer is element_sum)
+                    
+                    for i in tmp_tileinfo['Outputindex']:
+                        tmp_layer = self.net[i+layer_id][0][0]
+                        if tmp_layer['type'] != 'element_sum' and tmp_layer['type'] != 'element_multiply':
+                            tmp_tileinfo['is_branchout'] = -1
+
+                    input_size = int(layer_dict['Infeature'])
+                    inputchannel = 1
+                    data_inbuf = input_size * inputchannel * int(layer_dict['Inputbit'])/8
+                    data_outbuf = int(layer_dict['Outfeature']) * int(layer_dict['outputbit'])/8
+                    tmp_tileinfo['inLayer_data']=int(layer_dict['Outfeature']) * int(layer_dict['outputbit'])/all_cap
+                    temp_max_PE=-1 * np.ones(self.tile_num)
+                    for i in range(len(temp_max_PE)):
+                        for j in range(len(temp_max_PE[i])):
+                            if self.mapping_result[i][j]==layer_id:
+                                temp_max_PE[i][j]=min(temp_PE_num,mix_tile.PE_num[i][j]**2)
+                                    
+                                
+                                
+                    tmp_tileinfo['max_PE'] = temp_max_PE
+                elif layer_type == 'MM1':
+                    tmp_tileinfo['type'] = 'MM1'
+                    tmp_tileinfo['mx'] = math.ceil(weight_precision / self.tile.group_num) * math.ceil(int(layer_dict['Outfeature']) / self.tile.xbar_column)
+                        # mx: PE number in x-axis
+                    tmp_tileinfo['my'] = math.ceil(int(layer_dict['Infeature']) / self.tile.xbar_row)
+                        # my: PE number in y-axis
+                    tile_max_row=[]
+                    tile_max_column=[]
+                    tile_xbar_size=[]
+                    tile_device_type=[]
+                    temp_tilenum=0
+                    temp_PE_num=0
+                    all_cap=0
+                    #get the tile array
+                    while(1):
+                        if mixmode2_tilecount>=mix_tile.tile_num[0]*mix_tile.tile_num[0]:
+                            tmp_tileinfo['tilenum']=temp_tilenum
+                            tmp_tileinfo['PEnum']=temp_PE_num
+                            break
+                        #through the tile
+                        i=int(self.pos_mapping_order[mixmode2_tilecount][0])
+                        j=int(self.pos_mapping_order[mixmode2_tilecount][1])
+                        #able to change
+                        if mix_tile.layer_mapping[i][j]=='no':
+                            mixmode2_tilecount+=1
+                            pass
+                        elif int(mix_tile.layer_mapping[i][j])==layer_id:
+                            all_cap+=(mix_tile.PE_num[i][j]**2)*(mix_tile.xbar_size[i][j]**2)
+                            mixmode2_tilecount+=1
+                            temp_tilenum+=1
+                            temp_PE_num+=mix_tile.PE_num[i][j]**2
+                            tile_xbar_size.append(mix_tile.xbar_size[i][j])
+                            tile_device_type.append(mix_tile.device_type)
+                            self.mapping_result[i][j]=layer_id
+                            tile_max_row.append(min(mix_tile.xbar_size[i][j],int(layer_dict['Infeature'])))
+                            tile_max_column.append(min(int(layer_dict['Infeature']),mix_tile.xbar_size[i][j]))
+                        elif int(mix_tile.layer_mapping[i][j])!=layer_id:
+                            tmp_tileinfo['tilenum']=temp_tilenum
+                            tmp_tileinfo['PEnum']=temp_PE_num
+                            break
+                        
+                    
+                    tmp_tileinfo['all_cap']=all_cap 
+                    tmp_tileinfo['xbar_size']=tile_xbar_size                        
+                    tmp_tileinfo['max_group'] = min(weight_precision, self.tile.group_num)
+                    tmp_tileinfo['device_type']=tile_device_type
+                        # max_group: maximum used groups in one PE of this layer
+                    tmp_tileinfo['tile_max_row']=tile_max_row
+                    tmp_tileinfo['tile_max_column']=tile_max_column
+                    
+                    tmp_tileinfo['max_row']=max(tile_max_row)
+                    tmp_tileinfo['max_column']=max(tile_max_column)
+                        # tile_max_row: maximum used row in one crossbar of this layer
+                        # tile_max_column: maximum used column in one crossbar of this layer
+                    if 'Inputindex' not in layer_dict.keys():
+                        tmp_tileinfo['Inputindex'] = [-1]
+                    else:
+                        tmp_tileinfo['Inputindex'] = list(map(int, layer_dict['Inputindex']))
+                        # Inputindex: the relative index of the input layers of this layer
+                    if 'Outputindex' not in layer_dict.keys():
+                        tmp_tileinfo['Outputindex'] = [1]
+                    else:
+                        tmp_tileinfo['Outputindex'] = list(map(int, layer_dict['Outputindex']))
+                        # Outputindex: the relative index of the output layers of this layer
+                    if len(tmp_tileinfo['Outputindex']) == 1:
+                        tmp_tileinfo['is_branchin'] = -1
+                    else:
+                        tmp_tileinfo['is_branchin'] = 1
+                        # is_branchin: if this layer is the input layer of a branch
+                    tmp_tileinfo['is_branchout'] = 1
+                        # is_branchout: if this layer is the output layer of a branch (the next layer is element_sum)
+                    
                     for i in tmp_tileinfo['Outputindex']:
                         tmp_layer = self.net[i+layer_id][0][0]
                         if tmp_layer['type'] != 'element_sum' and tmp_layer['type'] != 'element_multiply':
@@ -1782,7 +2122,7 @@ class TCG():
                     
                     tmp_tileinfo['tilenum'] = math.ceil(tmp_tileinfo['PEnum'] / self.tile.tile_PE_total_num)
                     tmp_tileinfo['max_PE'] = min(tmp_tileinfo['PEnum'], self.tile.tile_PE_total_num)
-                if layer_type == 'conv' or layer_type == 'fc':
+                if layer_type == 'conv' or layer_type == 'fc' or layer_type == 'MM1':
                     total_xbar_num =mixmode3_tilecount*self.tile.tile_PE_total_num * multiple[layer_id]
                 start_tileid += tmp_tileinfo['tilenum']
                 num.append(tmp_tileinfo['PEnum'])
@@ -1834,6 +2174,46 @@ class TCG():
                     # buffer_size: unit Byte
                 elif layer_type == 'fc':
                     tmp_tileinfo['type'] = 'fc'
+                    tmp_tileinfo['mx'] = math.ceil(weight_precision / self.tile.group_num) * math.ceil(int(layer_dict['Outfeature']) / self.tile.xbar_column)
+                        # mx: PE number in x-axis
+                    tmp_tileinfo['my'] = math.ceil(int(layer_dict['Infeature']) / self.tile.xbar_row)
+                        # my: PE number in y-axis
+                    tmp_tileinfo['max_group'] = min(weight_precision, self.tile.group_num)
+                        # max_group: maximum used groups in one PE of this layer
+                    tmp_tileinfo['max_row'] = min(int(layer_dict['Infeature']), self.tile.xbar_row)
+                        # max_row: maximum used row in one crossbar of this layer
+                    tmp_tileinfo['max_column'] = min(int(layer_dict['Outfeature']), self.tile.xbar_column)
+                        # max_row: maximum used column in one crossbar of this layer
+                    if 'Inputindex' not in layer_dict.keys():
+                        tmp_tileinfo['Inputindex'] = [-1]
+                    else:
+                        tmp_tileinfo['Inputindex'] = list(map(int, layer_dict['Inputindex']))
+                        # Inputindex: the relative index of the input layers of this layer
+                    if 'Outputindex' not in layer_dict.keys():
+                        tmp_tileinfo['Outputindex'] = [1]
+                    else:
+                        tmp_tileinfo['Outputindex'] = list(map(int, layer_dict['Outputindex']))
+                        # Outputindex: the relative index of the output layers of this layer
+                    if len(tmp_tileinfo['Outputindex']) == 1:
+                        tmp_tileinfo['is_branchin'] = -1
+                    else:
+                        tmp_tileinfo['is_branchin'] = 1
+                    tmp_tileinfo['is_branchout'] = 1
+                    # is_branchout: if this layer is the output layer of a branch (the next layer is element_sum)
+                    for i in tmp_tileinfo['Outputindex']:
+                        if (i+layer_id) < self.layer_num:
+                            tmp_layer = self.net[i + layer_id][0][0]
+                            if (tmp_layer['type'] != 'element_sum' and tmp_layer['type']!= 'element_multiply'):
+                                tmp_tileinfo['is_branchout'] = -1
+                    # is_branchin: if this layer is the input layer of a branch
+                    input_size = int(layer_dict['Infeature'])
+                    inputchannel = 1
+                    tmp_tileinfo['inLayer_data']=tmp_tileinfo['max_column']*layer_dict['outputbit']*layer_dict['Outputsize']
+                    data_inbuf = input_size * inputchannel * int(layer_dict['Inputbit'])/8
+                    data_outbuf = int(layer_dict['Outfeature']) * int(layer_dict['outputbit'])/8
+                    # buffer_size: unit Byte
+                elif layer_type == 'MM1':
+                    tmp_tileinfo['type'] = 'MM1'
                     tmp_tileinfo['mx'] = math.ceil(weight_precision / self.tile.group_num) * math.ceil(int(layer_dict['Outfeature']) / self.tile.xbar_column)
                         # mx: PE number in x-axis
                     tmp_tileinfo['my'] = math.ceil(int(layer_dict['Infeature']) / self.tile.xbar_row)
@@ -2025,7 +2405,7 @@ class TCG():
                     self.global_multiplier_num = self.global_multiplier_num + previous_layer_dict['Outputchannel']*len(Inputindex_list)//2
                     if tmp_tileinfo['bit_branchout']>self.global_adder_bitwidth:
                         self.global_adder_bitwidth = tmp_tileinfo['bit_branchout']
-                if layer_type == 'conv' or layer_type == 'fc' or layer_type == 'MM':
+                if layer_type == 'conv' or layer_type == 'fc' or layer_type == 'MM' or layer_type == 'MM1':
                     total_xbar_num += tmp_tileinfo['mx'] * tmp_tileinfo['my'] * multiple[layer_id]
                 tmp_tileinfo['PEnum'] = tmp_tileinfo['mx'] * tmp_tileinfo['my'] * multiple[layer_id]
                 num.append(tmp_tileinfo['PEnum'])
@@ -2036,7 +2416,7 @@ class TCG():
                 self.layer_tileinfo.append(tmp_tileinfo)
 
             inputbit = int(layer_dict['Inputbit'])
-            if tmp_tileinfo['type'] == 'conv' or tmp_tileinfo['type'] == 'fc':
+            if tmp_tileinfo['type'] == 'conv' or tmp_tileinfo['type'] == 'fc' or tmp_tileinfo['type'] == 'MM1':
                 tmp_inbuf_size = math.pow(2,math.ceil(math.log(data_inbuf / tmp_tileinfo['PEnum'],2)))/1024
                 tmp_outbuf_size = math.pow(2,math.ceil(math.log(data_outbuf*2 / tmp_tileinfo['tilenum'],2)))/1024 # 2: ping-pong
             else:
@@ -2055,6 +2435,8 @@ class TCG():
                         self.layer_tileinfo[layer_id]['transLayer_data_before']=self.layer_tileinfo[layer_id-1]['inLayer_data']*self.layer_tileinfo[layer_id-1]['tilenum']/self.layer_tileinfo[layer_id]['tilenum']
                     elif self.layer_tileinfo[layer_id]['type']=='fc':
                         self.layer_tileinfo[layer_id]['transLayer_data_before']=self.layer_tileinfo[layer_id-1]['inLayer_data']*self.layer_tileinfo[layer_id-1]['tilenum']/self.layer_tileinfo[layer_id]['tilenum']
+                    elif self.layer_tileinfo[layer_id]['type']=='MM1':
+                        self.layer_tileinfo[layer_id]['transLayer_data_before']=self.layer_tileinfo[layer_id-1]['inLayer_data']*self.layer_tileinfo[layer_id-1]['tilenum']/self.layer_tileinfo[layer_id]['tilenum']
                     elif self.layer_tileinfo[layer_id]['type']=='pooling':
                         self.layer_tileinfo[layer_id]['transLayer_data_before']=self.layer_tileinfo[layer_id-1]['inLayer_data']*self.layer_tileinfo[layer_id-1]['tilenum']/self.layer_tileinfo[layer_id]['tilenum']
         elif (self.mix_mode==2 and self.auto_layer_mapping==0):
@@ -2064,6 +2446,8 @@ class TCG():
                     if self.layer_tileinfo[layer_id]['type']=='conv':
                         self.layer_tileinfo[layer_id]['transLayer_data_before']=self.layer_tileinfo[layer_id-1]['inLayer_data']*self.layer_tileinfo[layer_id-1]['all_cap']/self.layer_tileinfo[layer_id]['all_cap']
                     elif self.layer_tileinfo[layer_id]['type']=='fc':
+                        self.layer_tileinfo[layer_id]['transLayer_data_before']=self.layer_tileinfo[layer_id-1]['inLayer_data']*self.layer_tileinfo[layer_id-1]['all_cap']/self.layer_tileinfo[layer_id]['all_cap']
+                    elif self.layer_tileinfo[layer_id]['type']=='MM1':
                         self.layer_tileinfo[layer_id]['transLayer_data_before']=self.layer_tileinfo[layer_id-1]['inLayer_data']*self.layer_tileinfo[layer_id-1]['all_cap']/self.layer_tileinfo[layer_id]['all_cap']
                     elif self.layer_tileinfo[layer_id]['type']=='pooling':
                         self.layer_tileinfo[layer_id]['transLayer_data_before']=self.layer_tileinfo[layer_id-1]['inLayer_data']*self.layer_tileinfo[layer_id-1]['all_cap']/self.layer_tileinfo[layer_id]['all_cap']
@@ -2293,6 +2677,8 @@ class TCG():
                 [self.mapping_order,self.pos_mapping_order] = generate_hui_matrix(self.mapping_order.shape[0],  self.mapping_order.shape[1])
             elif self.tile_connection == 3:
                 [self.mapping_order,self.pos_mapping_order] = generate_zigzag_matrix(self.mapping_order.shape[0],  self.mapping_order.shape[1])
+            elif self.tile_connection >= 4:
+                [self.mapping_order,self.pos_mapping_order] = generate_dynamic_matrix(self.mapping_order.shape[0],  self.mapping_order.shape[1])
         elif self.topology == 1:
             if self.tile_connection == 0:
                 [self.mapping_order,self.pos_mapping_order] = generate_normal_matrix_cmesh(self.mapping_order.shape[0],  self.mapping_order.shape[1], self.c)
@@ -2300,6 +2686,8 @@ class TCG():
                 [self.mapping_order,self.pos_mapping_order] = generate_snake_matrix_cmesh(self.mapping_order.shape[0],  self.mapping_order.shape[1], self.c)
             elif self.tile_connection == 3:
                 [self.mapping_order,self.pos_mapping_order] = generate_zigzag_matrix_cmesh(self.mapping_order.shape[0],  self.mapping_order.shape[1], self.c)
+            elif self.tile_connection >= 4:
+                [self.mapping_order,self.pos_mapping_order] = generate_dynamic_matrix(self.mapping_order.shape[0],  self.mapping_order.shape[1])
 
     def mapping_net(self):
         self.mapping_matrix_gen()
@@ -2310,7 +2698,7 @@ class TCG():
                 for j in range(self.mapping_order.shape[1]):
                     if self.mapping_order[i][j] < self.used_tile_num:
                         for layer_id in range(self.layer_num - 1):
-                            if self.layer_tileinfo[layer_id]['type'] in ['conv','pooling','fc']:
+                            if self.layer_tileinfo[layer_id]['type'] in ['conv','pooling','fc', 'MM1']:
                                 # only allocate tile for conv layers, pooling layers, and fc layers
                                 
                                 if ((self.mapping_order[i][j] >= self.layer_tileinfo[layer_id]['startid']) &
@@ -2385,7 +2773,7 @@ class TCG():
                 # Determine the aggregate node for layer 0~N-1
                 if self.layer_tileinfo[layer_id]['is_branchout'] == 1:
                     # for the layer which is a output layer of one branch and the next layer is element_sum
-                    if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc']:
+                    if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc', 'MM1']:
                         src_pos = np.argwhere(self.mapping_result == layer_id)
                         
                         if len(src_pos) == 1:
@@ -2408,7 +2796,7 @@ class TCG():
                                     self.aggregate_arg[layer_id] = src_pos[A]
                                     mindis_total = maxdis_in+tmp_transLayer_distance
                 else:
-                    if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc']:
+                    if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc', 'MM1']:
                         src_pos = np.argwhere(self.mapping_result == layer_id)
                         
                         if len(src_pos) == 1:
@@ -2479,7 +2867,7 @@ class TCG():
                         # Determine the aggregate node for layer 0~N-1
                         if self.layer_tileinfo[layer_id]['is_branchout'] == 1:
                             # for the layer which is a output layer of one branch and the next layer is element_sum
-                            if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc']:
+                            if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc', 'MM1']:
                                 src_pos=[]
                                 #init the src_pos:
                                 for i in range(len(self.mapping_result_rewrite)):
@@ -2508,7 +2896,7 @@ class TCG():
                                             self.aggregate_arg[layer_id] = src_pos[A]
                                             mindis_total = maxdis_in+tmp_transLayer_distance
                         else:
-                            if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc']:
+                            if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc', 'MM1']:
                                 src_pos=[]
                                 #init the src_pos:
                                 for i in range(len(self.mapping_result_rewrite)):
@@ -2605,7 +2993,7 @@ class TCG():
                     else:
                         if self.layer_tileinfo[self.final_layer[k]]['is_branchout'] == 1:
                             # for the layer which is a output layer of one branch and the next layer is element_sum
-                            if self.layer_tileinfo[self.final_layer[k]]['type'] in ['conv', 'pooling', 'fc']:
+                            if self.layer_tileinfo[self.final_layer[k]]['type'] in ['conv', 'pooling', 'fc', 'MM1']:
                                 src_pos=[]
                                 #init the src_pos:
                                 for i in range(len(self.mapping_result_rewrite)):
@@ -2634,7 +3022,7 @@ class TCG():
                                             self.aggregate_arg[self.final_layer[k]] = src_pos[A]
                                             mindis_total = maxdis_in+tmp_transLayer_distance
                         else:
-                            if self.layer_tileinfo[self.final_layer[k]]['type'] in ['conv', 'pooling', 'fc']:
+                            if self.layer_tileinfo[self.final_layer[k]]['type'] in ['conv', 'pooling', 'fc', 'MM1']:
                                 src_pos=[]
                                 #init the src_pos:
                                 for i in range(len(self.mapping_result_rewrite)):
@@ -2722,7 +3110,7 @@ class TCG():
                         # Determine the aggregate node for layer 0~N-1
                         if self.layer_tileinfo[layer_id]['is_branchout'] == 1:
                             # for the layer which is a output layer of one branch and the next layer is element_sum
-                            if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc','MM']:
+                            if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc','MM', 'MM1']:
                                 src_pos=[]
                                 #init the src_pos:
                                 for i in range(len(self.mapping_result_rewrite)):
@@ -2754,7 +3142,7 @@ class TCG():
                                     self.transLayer_distance[0][layer_id].append(final_out)
                                     self.aggregate_arg[layer_id].append(src_pos[final_src])
                         else:
-                            if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc','MM']:
+                            if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc','MM', 'MM1']:
                                 src_pos=[]
                                 #init the src_pos:
                                 for i in range(len(self.mapping_result_rewrite)):
@@ -2845,7 +3233,7 @@ class TCG():
                 elif len(self.rewrite_layer_list[k])==1:
                     #only one layer on the tile
                     layer_id =self.rewrite_layer_list[k][0]
-                    assert self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc','MM']
+                    assert self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc','MM', 'MM1']
                     # for i in range(len(self.mapping_result_rewrite)):
                     #     for j in range(len(self.mapping_result_rewrite[i])):
                     #         if len(self.mapping_result_rewrite[i][j])>k:
@@ -2884,7 +3272,7 @@ class TCG():
                 # Determine the aggregate node for layer 0~N-1
                 if self.layer_tileinfo[layer_id]['is_branchout'] == 1:
                     # for the layer which is a output layer of one branch and the next layer is element_sum
-                    if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc']:
+                    if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc', 'MM1']:
                         src_pos = np.argwhere(self.mapping_result == layer_id)
                         
                         if len(src_pos) == 1:
@@ -2907,7 +3295,7 @@ class TCG():
                                     self.aggregate_arg[layer_id] = src_pos[A]
                                     mindis_total = maxdis_in+tmp_transLayer_distance
                 else:
-                    if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc']:
+                    if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc', 'MM1']:
                         src_pos = np.argwhere(self.mapping_result == layer_id)
                         
                         if len(src_pos) == 1:
@@ -2978,7 +3366,7 @@ class TCG():
                         # Determine the aggregate node for layer 0~N-1
                         if self.layer_tileinfo[layer_id]['is_branchout'] == 1:
                             # for the layer which is a output layer of one branch and the next layer is element_sum
-                            if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc']:
+                            if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc', 'MM1']:
                                 src_pos=[]
                                 #init the src_pos:
                                 for i in range(len(self.mapping_result_rewrite)):
@@ -3007,7 +3395,7 @@ class TCG():
                                             self.aggregate_arg[layer_id] = src_pos[A]
                                             mindis_total = maxdis_in+tmp_transLayer_distance
                         else:
-                            if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc']:
+                            if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc', 'MM1']:
                                 src_pos=[]
                                 #init the src_pos:
                                 for i in range(len(self.mapping_result_rewrite)):
@@ -3104,7 +3492,7 @@ class TCG():
                     else:
                         if self.layer_tileinfo[self.final_layer[k]]['is_branchout'] == 1:
                             # for the layer which is a output layer of one branch and the next layer is element_sum
-                            if self.layer_tileinfo[self.final_layer[k]]['type'] in ['conv', 'pooling', 'fc']:
+                            if self.layer_tileinfo[self.final_layer[k]]['type'] in ['conv', 'pooling', 'fc', 'MM1']:
                                 src_pos=[]
                                 #init the src_pos:
                                 for i in range(len(self.mapping_result_rewrite)):
@@ -3133,7 +3521,7 @@ class TCG():
                                             self.aggregate_arg[self.final_layer[k]] = src_pos[A]
                                             mindis_total = maxdis_in+tmp_transLayer_distance
                         else:
-                            if self.layer_tileinfo[self.final_layer[k]]['type'] in ['conv', 'pooling', 'fc']:
+                            if self.layer_tileinfo[self.final_layer[k]]['type'] in ['conv', 'pooling', 'fc', 'MM1']:
                                 src_pos=[]
                                 #init the src_pos:
                                 for i in range(len(self.mapping_result_rewrite)):
@@ -3221,7 +3609,7 @@ class TCG():
                         # Determine the aggregate node for layer 0~N-1
                         if self.layer_tileinfo[layer_id]['is_branchout'] == 1:
                             # for the layer which is a output layer of one branch and the next layer is element_sum
-                            if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc','MM']:
+                            if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc','MM', 'MM1']:
                                 src_pos=[]
                                 #init the src_pos:
                                 for i in range(len(self.mapping_result_rewrite)):
@@ -3253,7 +3641,7 @@ class TCG():
                                     self.transLayer_distance[0][layer_id].append(final_out)
                                     self.aggregate_arg[layer_id].append(src_pos[final_src])
                         else:
-                            if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc','MM']:
+                            if self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc','MM', 'MM1']:
                                 src_pos=[]
                                 #init the src_pos:
                                 for i in range(len(self.mapping_result_rewrite)):
@@ -3344,7 +3732,7 @@ class TCG():
                 elif len(self.rewrite_layer_list[k])==1:
                     #only one layer on the tile
                     layer_id =self.rewrite_layer_list[k][0]
-                    assert self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc','MM']
+                    assert self.layer_tileinfo[layer_id]['type'] in ['conv', 'pooling', 'fc','MM', 'MM1']
                     # for i in range(len(self.mapping_result_rewrite)):
                     #     for j in range(len(self.mapping_result_rewrite[i])):
                     #         if len(self.mapping_result_rewrite[i][j])>k:

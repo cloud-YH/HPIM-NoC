@@ -300,6 +300,24 @@ def generate_zigzag_matrix_cmesh(row, column, c=2):
         start += 1
     return matrix,pos
 
+def generate_dynamic_matrix(row, column):
+    file_name = 'mapping_order.txt'
+    pos=np.zeros([row*column,2])
+    tile = 0
+    data = []
+    with open(file_name, 'r') as file:
+        for line in file:
+            row_data = [int(num) for num in line.split()]
+            for num in row_data:
+                pos[num][0]=tile//column
+                pos[num][1]=tile%column
+                tile = tile + 1
+                data.append(num)
+    matrix = np.array(data)
+    matrix = matrix.reshape((row, column))
+    
+    return matrix,pos
+
 class mixtile():
     def __init__(self,mix_tile_path):
         tile_config = cp.ConfigParser()
@@ -353,6 +371,15 @@ class mixtile():
                                 elif TCG_mapping.net[layer_id][0][0]['type']=='fc':
                                     temp_max_row=min(int(TCG_mapping.net[layer_id][0][0]['Infeature']), int(self.xbar_size[i][j]))
                                     temp_max_column=min(int(TCG_mapping.net[layer_id][0][0]['Outfeature']), int(self.xbar_size[i][j]))
+                                elif TCG_mapping.net[layer_id][0][0]['type']=='MM':
+                                    temp_max_row=min(int(TCG_mapping.net[layer_id][0][0]['Infeature']), int(self.xbar_size[i][j]))
+                                    temp_max_column=min(int(TCG_mapping.net[layer_id][0][0]['Outfeature']), int(self.xbar_size[i][j]))
+                                elif TCG_mapping.net[layer_id][0][0]['type']=='MM1':
+                                    temp_max_row=min(int(TCG_mapping.net[layer_id][0][0]['Infeature']), int(self.xbar_size[i][j]))
+                                    temp_max_column=min(int(TCG_mapping.net[layer_id][0][0]['Outfeature']), int(self.xbar_size[i][j]))
+                                elif TCG_mapping.net[layer_id][0][0]['type']=='MM2':
+                                    temp_max_row=min(int(TCG_mapping.net[layer_id][0][0]['Infeature']), int(self.xbar_size[i][j]))
+                                    temp_max_column=min(int(TCG_mapping.net[layer_id][0][0]['Outfeature']), int(self.xbar_size[i][j]))
                                 else:
                                     temp_max_row=0
                                     temp_max_column=0
@@ -364,6 +391,15 @@ class mixtile():
                                     temp_max_row=(int(self.xbar_size[i][j]))
                                     temp_max_column=(int(self.xbar_size[i][j]))
                                 elif TCG_mapping.net[layer_id][0][0]['type']=='fc':
+                                    temp_max_row=(int(self.xbar_size[i][j]))
+                                    temp_max_column=(int(self.xbar_size[i][j]))
+                                elif TCG_mapping.net[layer_id][0][0]['type']=='MM':
+                                    temp_max_row=(int(self.xbar_size[i][j]))
+                                    temp_max_column=(int(self.xbar_size[i][j]))
+                                elif TCG_mapping.net[layer_id][0][0]['type']=='MM1':
+                                    temp_max_row=(int(self.xbar_size[i][j]))
+                                    temp_max_column=(int(self.xbar_size[i][j]))
+                                elif TCG_mapping.net[layer_id][0][0]['type']=='MM2':
                                     temp_max_row=(int(self.xbar_size[i][j]))
                                     temp_max_column=(int(self.xbar_size[i][j]))
                                 else:
@@ -403,6 +439,8 @@ class mixtile():
                 [self.mapping_order,self.pos_mapping_order] = generate_hui_matrix(self.tile_num[0], self.tile_num[1])
             elif self.tile_connection == 3:
                 [self.mapping_order,self.pos_mapping_order] = generate_zigzag_matrix(self.tile_num[0], self.tile_num[1])
+            elif self.tile_connection >= 4:
+                [self.mapping_order,self.pos_mapping_order] = generate_dynamic_matrix(self.tile_num[0], self.tile_num[1])
         elif self.topology == 1:
             if self.tile_connection == 0:
                 [self.mapping_order,self.pos_mapping_order] = generate_normal_matrix_cmesh(self.tile_num[0], self.tile_num[1], self.c)
@@ -410,3 +448,5 @@ class mixtile():
                 [self.mapping_order,self.pos_mapping_order] = generate_snake_matrix_cmesh(self.tile_num[0], self.tile_num[1], self.c)
             elif self.tile_connection == 3:
                 [self.mapping_order,self.pos_mapping_order] = generate_zigzag_matrix_cmesh(self.tile_num[0], self.tile_num[1], self.c)
+            elif self.tile_connection >= 4:
+                [self.mapping_order,self.pos_mapping_order] = generate_dynamic_matrix(self.tile_num[0], self.tile_num[1])

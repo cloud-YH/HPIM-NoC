@@ -440,7 +440,7 @@ class Model_area():
         if hasattr(self,'every_tile_area'):
             with open('area_tile.txt', 'w') as file:
                 for a in self.every_tile_area:
-                    file.write(f"{a[1]} {a[2]} {int(a[0]/1000)} {a[4]}\n")
+                    file.write(f"{a[1]} {a[2]} {int(a[0]/100)} {a[4]}\n")
         return self.arch_total_area
     #linqiushi modified
     def area_output_CNNParted(self):

@@ -70,10 +70,12 @@ class Model_latency():
         modelL_config = cp.ConfigParser()
         modelL_config.read(SimConfig_path, encoding='UTF-8')
         NoC_Compute = int(modelL_config.get('Algorithm Configuration', 'NoC_enable'))
+        self.Spacing_ratio = float(modelL_config.get('Mixmode2/4 Configuration', 'Spacing_ratio'))
         self.area = area_MNSIM
         self.inter_tile_bandwidth = float(modelL_config.get('Tile level', 'Inter_Tile_Bandwidth'))
         self.NetStruct = NetStruct
-        self.topology = mix_tile.topology
+        if mix_mode==2 or mix_mode==4:
+            self.topology = mix_tile.topology
         if multiple is None:
             multiple = [1] * len(self.NetStruct)
         if TCG_mapping is None:
@@ -81,13 +83,14 @@ class Model_latency():
         self.graph = TCG_mapping
         if mix_mode==1:
             self.graph.mapping_net()
-        elif mix_mode==2:
-            print("zheli")
+        #elif mix_mode==2:
+            #print("zheli")
         #print(self.graph.mapping_result)
-        if (mix_tile.topology == 0):
-            self.graph.calculate_transfer_distance()
-        elif (mix_tile.topology == 1):
-            self.graph.calculate_transfer_distance_cmesh(c=mix_tile.c)
+        if mix_mode==2 or mix_mode==4:
+            if (mix_tile.topology == 0):
+                self.graph.calculate_transfer_distance()
+            elif (mix_tile.topology == 1):
+                self.graph.calculate_transfer_distance_cmesh(c=mix_tile.c)
         self.CNN_step = int(modelL_config.get('Mixmode2/4 Configuration', 'CNN_step'))
         if (self.CNN_step == 1 and cnn_step==0):
             cnn_latency_step = Model_latency(NetStruct=NetStruct, SimConfig_path=SimConfig_path, TCG_mapping=TCG_mapping,mix_mode=mix_mode,mix_tile=mix_tile,cnn_step=1,area_MNSIM=self.area)
@@ -107,7 +110,8 @@ class Model_latency():
         #mixmodel = cp.ConfigParser()
         #mixmodel.read('./mix_tileinfo.ini', encoding='UTF-8')
         #self.tile_num = list(map(int, mixmodel.get('tile', 'tile_num').split(',')))
-        self.tile_num = mix_tile.tile_num
+        if mix_mode==2 or mix_mode==4:
+            self.tile_num = mix_tile.tile_num
         if (cnn_step==0):
             self.Booksim_Flag = int(modelL_config.get('Mixmode2/4 Configuration', 'Booksim_Flag'))
             self.Booksim_en = int(modelL_config.get('Mixmode2/4 Configuration', 'Booksim_en')) 
@@ -124,7 +128,7 @@ class Model_latency():
         self.Trans_Latency = []
         self.Merge_Latency_Line = []
         self.Trans_Latency_Line = []
-        
+        self.layer_num=TCG_mapping.layer_num
         if (self.Booksim_Flag == 1):
             if (self.Booksim_en==1):
                 if (mix_tile.topology == 0):
@@ -138,7 +142,9 @@ class Model_latency():
                 self.booksim_read()
         if (self.Floorplan_en == 1):
             self.Floorplan()
-
+        while len(self.Merge_Latency) < self.layer_num:
+            self.Merge_Latency.append(0)
+            self.Trans_Latency.append(0)
         if(self.Line_latency == 1):
             self.linelatency_read()
             if (self.Booksim_Flag == 1):
@@ -149,7 +155,6 @@ class Model_latency():
                 self.Trans_Latency = self.Trans_Latency_Line
         else:
             print("Floorplan area total:", self.area, "um^2")
-        
         if NoC_Compute == 1:
             self.Noc_latency = interconnect_estimation()
         else:
@@ -265,8 +270,10 @@ class Model_latency():
             self.tile_merge_latency[layer_id].append(merge_time)
             self.tile_transfer_latency[layer_id].append(transfer_time)
         elif layer_type == 'fc':
+
             self.begin_time[layer_id] = output_size * [begin_time]
             self.finish_time[layer_id] = output_size * [compute_time]
+
             self.compute_interval[layer_id].append([begin_time, compute_time])
 
             self.buffer_latency[layer_id].append(temp_tile_latency.tile_buf_wlatency + temp_tile_latency.tile_buf_rlatency +
@@ -293,6 +300,60 @@ class Model_latency():
             self.tile_merge_latency[layer_id].append(merge_time)
             self.tile_transfer_latency[layer_id].append(transfer_time)
         elif layer_type=='MM':
+            self.begin_time[layer_id] = output_size * [begin_time]
+            self.finish_time[layer_id] = output_size * [compute_time]
+            self.compute_interval[layer_id].append([begin_time, compute_time])
+            self.buffer_latency[layer_id].append(temp_tile_latency.tile_buf_wlatency + temp_tile_latency.tile_buf_rlatency +
+                                                temp_tile_latency.PE_buf_rlatency + temp_tile_latency.PE_buf_wlatency)
+            self.computing_latency[layer_id].append(temp_tile_latency.computing_latency)
+            self.DAC_latency[layer_id].append(temp_tile_latency.DAC_latency)
+            self.xbar_latency[layer_id].append(temp_tile_latency.xbar_latency)
+            self.ADC_latency[layer_id].append(temp_tile_latency.ADC_latency)
+            self.buffer_r_latency[layer_id].append(temp_tile_latency.tile_buf_rlatency+temp_tile_latency.PE_buf_rlatency)
+            self.buffer_w_latency[layer_id].append(temp_tile_latency.tile_buf_wlatency+temp_tile_latency.PE_buf_wlatency)
+            self.iReg_latency[layer_id].append(temp_tile_latency.iReg_latency)
+            self.input_demux_latency[layer_id].append(temp_tile_latency.input_demux_latency)
+            self.output_mux_latency[layer_id].append(temp_tile_latency.output_mux_latency)
+            self.shiftreg_latency[layer_id].append(temp_tile_latency.shiftreg_latency)
+            self.adder_latency[layer_id].append(temp_tile_latency.adder_latency)
+            self.oReg_latency[layer_id].append(temp_tile_latency.oReg_latency)
+            self.jointmodule_latency[layer_id].append(temp_tile_latency.jointmodule_latency)
+            self.digital_latency[layer_id].append(temp_tile_latency.iReg_latency + temp_tile_latency.input_demux_latency +
+                                                  temp_tile_latency.output_mux_latency + temp_tile_latency.shiftreg_latency +
+                                                  temp_tile_latency.adder_latency + temp_tile_latency.oReg_latency + temp_tile_latency.jointmodule_latency)
+            self.pooling_latency[layer_id].append(0)
+            self.intra_tile_latency[layer_id].append(temp_tile_latency.transfer_latency)
+            self.inter_tile_latency[layer_id].append(merge_time + transfer_time)
+            self.tile_merge_latency[layer_id].append(merge_time)
+            self.tile_transfer_latency[layer_id].append(transfer_time)
+        elif layer_type=='MM1':
+            self.begin_time[layer_id] = output_size * [begin_time]
+            self.finish_time[layer_id] = output_size * [compute_time]
+            self.compute_interval[layer_id].append([begin_time, compute_time])
+            self.buffer_latency[layer_id].append(temp_tile_latency.tile_buf_wlatency + temp_tile_latency.tile_buf_rlatency +
+                                                temp_tile_latency.PE_buf_rlatency + temp_tile_latency.PE_buf_wlatency)
+            self.computing_latency[layer_id].append(temp_tile_latency.computing_latency)
+            self.DAC_latency[layer_id].append(temp_tile_latency.DAC_latency)
+            self.xbar_latency[layer_id].append(temp_tile_latency.xbar_latency)
+            self.ADC_latency[layer_id].append(temp_tile_latency.ADC_latency)
+            self.buffer_r_latency[layer_id].append(temp_tile_latency.tile_buf_rlatency+temp_tile_latency.PE_buf_rlatency)
+            self.buffer_w_latency[layer_id].append(temp_tile_latency.tile_buf_wlatency+temp_tile_latency.PE_buf_wlatency)
+            self.iReg_latency[layer_id].append(temp_tile_latency.iReg_latency)
+            self.input_demux_latency[layer_id].append(temp_tile_latency.input_demux_latency)
+            self.output_mux_latency[layer_id].append(temp_tile_latency.output_mux_latency)
+            self.shiftreg_latency[layer_id].append(temp_tile_latency.shiftreg_latency)
+            self.adder_latency[layer_id].append(temp_tile_latency.adder_latency)
+            self.oReg_latency[layer_id].append(temp_tile_latency.oReg_latency)
+            self.jointmodule_latency[layer_id].append(temp_tile_latency.jointmodule_latency)
+            self.digital_latency[layer_id].append(temp_tile_latency.iReg_latency + temp_tile_latency.input_demux_latency +
+                                                  temp_tile_latency.output_mux_latency + temp_tile_latency.shiftreg_latency +
+                                                  temp_tile_latency.adder_latency + temp_tile_latency.oReg_latency + temp_tile_latency.jointmodule_latency)
+            self.pooling_latency[layer_id].append(0)
+            self.intra_tile_latency[layer_id].append(temp_tile_latency.transfer_latency)
+            self.inter_tile_latency[layer_id].append(merge_time + transfer_time)
+            self.tile_merge_latency[layer_id].append(merge_time)
+            self.tile_transfer_latency[layer_id].append(transfer_time)
+        elif layer_type=='MM2':
             self.begin_time[layer_id] = output_size * [begin_time]
             self.finish_time[layer_id] = output_size * [compute_time]
             self.compute_interval[layer_id].append([begin_time, compute_time])
@@ -624,9 +685,9 @@ class Model_latency():
                                     self.graph.layer_tileinfo[layer_id]['max_PE'] * outputbit / self.inter_tile_bandwidth) + self.Merge_Latency[layer_id] *  1000 / self.freq
 
                     if self.Booksim_Flag == 0 :
-                        transfer_time = self.graph.transLayer_distance[0][layer_id] * (outputchannel * outputbit / self.inter_tile_bandwidth)
+                        transfer_time = self.graph.transLayer_distance[0][layer_id] * (output_size * outputbit / self.inter_tile_bandwidth)
                     else :
-                        transfer_time = self.graph.transLayer_distance[0][layer_id] * (outputchannel * outputbit / self.inter_tile_bandwidth) + (self.Trans_Latency[layer_id] ) *  1000 / self.freq
+                        transfer_time = self.graph.transLayer_distance[0][layer_id] * (output_size * outputbit / self.inter_tile_bandwidth) + (self.Trans_Latency[layer_id] ) *  1000 / self.freq
 
                     # Todo: update merge time (adder tree) and transfer data volume
                     
@@ -638,6 +699,54 @@ class Model_latency():
                         compute_time = temp_tile_latency.tile_latency + merge_time + transfer_time + begin_time
                     
                     self.pipe_result_update(layer_type='fc', begin_time=begin_time, compute_time=compute_time, layer_id=layer_id,
+                        temp_tile_latency=temp_tile_latency, merge_time=merge_time, transfer_time=transfer_time, output_size=output_size)
+                elif layer_dict['type'] == 'MM1':
+                    output_size = int(layer_dict['Outfeature'])
+                    input_size = int(layer_dict['Infeature'])
+                    inputbit = int(layer_dict['Inputbit'])
+                    outputbit = int(layer_dict['outputbit'])
+                    input_size1 = layer_dict['input1_size']
+                    token_num = int(input_size1[0])
+                    Inputindex_list = list(map(int, layer_dict['Inputindex']))
+                    inputindex = Inputindex_list[0]
+                    self.layer_latency_initial()
+                    indata = self.graph.layer_tileinfo[layer_id]['max_row'] * inputbit / 8 * token_num
+                    rdata = indata
+                    temp_tile_latency = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
+                                                                  read_row=self.graph.layer_tileinfo[layer_id]['max_row'],
+                                                                  read_column=self.graph.layer_tileinfo[layer_id]['max_column'],
+                                                                  indata=indata, rdata=rdata, inprecision=inputbit,
+                                                                  PE_num=self.graph.layer_tileinfo[layer_id]['max_PE'],
+                                                                  default_inbuf_size=self.graph.max_inbuf_size,
+                                                                  default_outbuf_size=self.graph.max_outbuf_size
+                                                                  )
+                    temp_tile_latency.outbuf.calculate_buf_read_latency(rdata=(self.graph.layer_tileinfo[layer_id]['max_column'] *
+                        outputbit * self.graph.layer_tileinfo[layer_id]['max_PE'] / 8) * token_num)
+                    temp_tile_latency.tile_buf_rlatency = temp_tile_latency.outbuf.buf_rlatency
+                    if self.Booksim_Flag == 0 :
+                        merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                    (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['max_column'] *
+                                    self.graph.layer_tileinfo[layer_id]['max_PE'] * token_num * outputbit / self.inter_tile_bandwidth)
+                    else :
+                        merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                    (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['max_column'] *
+                                    self.graph.layer_tileinfo[layer_id]['max_PE'] * token_num * outputbit / self.inter_tile_bandwidth) + self.Merge_Latency[layer_id] *  1000 / self.freq
+
+                    if self.Booksim_Flag == 0 :
+                        transfer_time = self.graph.transLayer_distance[0][layer_id] * (output_size * token_num * outputbit / self.inter_tile_bandwidth)
+                    else :
+                        transfer_time = self.graph.transLayer_distance[0][layer_id] * (output_size * token_num * outputbit / self.inter_tile_bandwidth) + (self.Trans_Latency[layer_id] ) *  1000 / self.freq
+
+                    # Todo: update merge time (adder tree) and transfer data volume
+                    
+
+                    begin_time = max(self.finish_time[layer_id+inputindex])
+                    if self.Pipe_flag == 1 :
+                        compute_time = max(temp_tile_latency.tile_latency, merge_time + transfer_time) + begin_time
+                    else :
+                        compute_time = temp_tile_latency.tile_latency + merge_time + transfer_time + begin_time
+                    
+                    self.pipe_result_update(layer_type='MM1', begin_time=begin_time, compute_time=compute_time, layer_id=layer_id,
                         temp_tile_latency=temp_tile_latency, merge_time=merge_time, transfer_time=transfer_time, output_size=output_size)
                 elif layer_dict['type'] == 'pooling':
                     self.layer_latency_initial()
@@ -662,9 +771,9 @@ class Model_latency():
                     temp_pooling_latency.outbuf_rlatency = temp_pooling_latency.outbuf.buf_rlatency
                     merge_time = temp_pooling_latency.outbuf_rlatency
                     if self.Booksim_Flag == 0 :
-                        transfer_time = self.graph.transLayer_distance[0][layer_id] * (outputchannel * outputbit / self.inter_tile_bandwidth)
+                        transfer_time = self.graph.transLayer_distance[0][layer_id] * (output_size * outputbit / self.inter_tile_bandwidth)
                     else :
-                        transfer_time = self.graph.transLayer_distance[0][layer_id] * (outputchannel * outputbit / self.inter_tile_bandwidth) + (self.Trans_Latency[layer_id] ) *  1000 / self.freq
+                        transfer_time = self.graph.transLayer_distance[0][layer_id] * (output_size * outputbit / self.inter_tile_bandwidth) + (self.Trans_Latency[layer_id] ) *  1000 / self.freq
 
                     # Todo: update transfer data volume
                     for i in range(output_size[0]):
@@ -1068,287 +1177,604 @@ class Model_latency():
             elif mix_mode==4:
                 rewrite_mode=self.graph.rewrite_mode
             #linqiushi above
-            if layer_id == 0:
+            if layer_id == 0 or (int(layer_id) + int(layer_dict['Inputindex'][0]) == -1):
                 # for the first layer, first layer must be conv layer
-                self.layer_latency_initial()
-                output_size = list(map(int, layer_dict['Outputsize']))
-                input_size = list(map(int, layer_dict['Inputsize']))
-                kernelsize = int(layer_dict['Kernelsize'])
-                stride = int(layer_dict['Stride'])
-                inputchannel = int(layer_dict['Inputchannel'])
-                outputchannel = int(layer_dict['Outputchannel'])
-                padding = int(layer_dict['Padding'])
-                inputbit = int(layer_dict['Inputbit'])
-                outputbit = int(layer_dict['outputbit'])
-                #linqiushi modified
-                if mix_mode==3:
-                    input_channel_PE=self.graph.layer_tileinfo[layer_id]['tile_max_row'][0] / (kernelsize ** 2)
-                #linqiushi above
-                else:
-                    input_channel_PE = self.graph.layer_tileinfo[layer_id]['max_row'] / (kernelsize ** 2)
-                # the input channel number each PE processes
-                if mix_mode==1:
-                    temp_tile_latency = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
-                                                          read_row=self.graph.layer_tileinfo[layer_id]['max_row'],
-                                                          read_column=self.graph.layer_tileinfo[layer_id]['max_column'],
-                                                          indata=0, rdata=0, inprecision=inputbit,
-                                                          PE_num=self.graph.layer_tileinfo[layer_id]['max_PE'],
-                                                          default_inbuf_size=self.graph.max_inbuf_size,
-                                                          default_outbuf_size=self.graph.max_outbuf_size,
-                                                          mix_mode=mix_mode
-                                                          )
-                #linqiushi modified
-                elif mix_mode==2:
-                    temp_device_type=[]
-                    temp_PE_num=[]
-                    temp_xbar_size=[]
-                    temp_pos=[]
-                    for i in range(self.graph.layer_tileinfo[0]['tile_num_mix'][0]):
-                        for j in range(self.graph.layer_tileinfo[0]['tile_num_mix'][1]):
-                            if self.graph.auto_layer_mapping==0:
-                                if self.graph.layer_tileinfo[0]['layer_mapping_mix'][i][j]=='no':
-                                    pass
-                                elif int(self.graph.layer_tileinfo[0]['layer_mapping_mix'][i][j])==layer_id:
-                                    
-                                    temp_pos.append([i,j])
-                                    temp_device_type.append(self.graph.layer_tileinfo[0]['device_type_mix'][i][j])
-                                    temp_PE_num.append((self.graph.layer_tileinfo[0]['PE_num_mix'][i][j])**2)
-                                    temp_xbar_size.append(self.graph.layer_tileinfo[0]['xbar_size_mix'][i][j])
-                            else:
-                                if self.graph.mapping_result[i][j]==layer_id:
-                                    temp_pos.append([i,j])
-                                    temp_device_type.append(self.graph.layer_tileinfo[0]['device_type_mix'][i][j])
-                                    temp_PE_num.append(self.graph.layer_tileinfo[layer_id]['max_PE'][i][j])
-                                    temp_xbar_size.append(self.graph.layer_tileinfo[0]['xbar_size_mix'][i][j])
-                                
-                    
-                    temp_tile_latency_max=0
-                    for i in range(len(temp_device_type)):
-                        
-                        temp_tile_latency0 = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
-                                                            read_row=self.graph.layer_tileinfo[layer_id]['max_row_mix'][i],
-                                                            read_column=self.graph.layer_tileinfo[layer_id]['max_column_mix'][i],
-                                                            indata=0, rdata=0, inprecision=inputbit,
-                                                            PE_num=temp_PE_num[i],
-                                                            default_inbuf_size=self.graph.max_inbuf_size,
-                                                            default_outbuf_size=self.graph.max_outbuf_size,
-                                                            device_type=temp_device_type[i],
-                                                            xbar_size=[int(temp_xbar_size[i]),int(temp_xbar_size[i])],
-                                                            mix_mode=mix_mode
-                                                            )
-                        if temp_tile_latency0.tile_latency>temp_tile_latency_max:
-                            temp_tile_latency_max=temp_tile_latency0.tile_latency
-                            temp_tile_latency = temp_tile_latency0
-                            
-                elif mix_mode==3:
-                    
-                    temp_tile_latency_max=0
-                    for i in range(len(self.graph.layer_tileinfo[layer_id]['tile_max_row'])):
-                        
+                if layer_dict['type'] == 'conv': 
+                    self.layer_latency_initial()
+                    output_size = list(map(int, layer_dict['Outputsize']))
+                    input_size = list(map(int, layer_dict['Inputsize']))
+                    kernelsize = int(layer_dict['Kernelsize'])
+                    stride = int(layer_dict['Stride'])
+                    inputchannel = int(layer_dict['Inputchannel'])
+                    outputchannel = int(layer_dict['Outputchannel'])
+                    padding = int(layer_dict['Padding'])
+                    inputbit = int(layer_dict['Inputbit'])
+                    outputbit = int(layer_dict['outputbit'])
+                    #linqiushi modified
+                    if mix_mode==3:
+                        input_channel_PE=self.graph.layer_tileinfo[layer_id]['tile_max_row'][0] / (kernelsize ** 2)
+                    #linqiushi above
+                    else:
+                        input_channel_PE = self.graph.layer_tileinfo[layer_id]['max_row'] / (kernelsize ** 2)
+                    # the input channel number each PE processes
+                    if mix_mode==1:
                         temp_tile_latency = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
-                                                            read_row=self.graph.layer_tileinfo[layer_id]['tile_max_row'][i],
-                                                            read_column=self.graph.layer_tileinfo[layer_id]['tile_max_column'][i],
+                                                              read_row=self.graph.layer_tileinfo[layer_id]['max_row'],
+                                                              read_column=self.graph.layer_tileinfo[layer_id]['max_column'],
+                                                              indata=0, rdata=0, inprecision=inputbit,
+                                                              PE_num=self.graph.layer_tileinfo[layer_id]['max_PE'],
+                                                              default_inbuf_size=self.graph.max_inbuf_size,
+                                                              default_outbuf_size=self.graph.max_outbuf_size,
+                                                              mix_mode=mix_mode
+                                                              )
+                    #linqiushi modified
+                    elif mix_mode==2:
+                        temp_device_type=[]
+                        temp_PE_num=[]
+                        temp_xbar_size=[]
+                        temp_pos=[]
+                        for i in range(self.graph.layer_tileinfo[0]['tile_num_mix'][0]):
+                            for j in range(self.graph.layer_tileinfo[0]['tile_num_mix'][1]):
+                                if self.graph.auto_layer_mapping==0:
+                                    if self.graph.layer_tileinfo[0]['layer_mapping_mix'][i][j]=='no':
+                                        pass
+                                    elif int(self.graph.layer_tileinfo[0]['layer_mapping_mix'][i][j])==layer_id:
+
+                                        temp_pos.append([i,j])
+                                        temp_device_type.append(self.graph.layer_tileinfo[0]['device_type_mix'][i][j])
+                                        temp_PE_num.append((self.graph.layer_tileinfo[0]['PE_num_mix'][i][j])**2)
+                                        temp_xbar_size.append(self.graph.layer_tileinfo[0]['xbar_size_mix'][i][j])
+                                else:
+                                    if self.graph.mapping_result[i][j]==layer_id:
+                                        temp_pos.append([i,j])
+                                        temp_device_type.append(self.graph.layer_tileinfo[0]['device_type_mix'][i][j])
+                                        temp_PE_num.append(self.graph.layer_tileinfo[layer_id]['max_PE'][i][j])
+                                        temp_xbar_size.append(self.graph.layer_tileinfo[0]['xbar_size_mix'][i][j])
+
+
+                        temp_tile_latency_max=0
+                        for i in range(len(temp_device_type)):
+
+                            temp_tile_latency0 = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
+                                                                read_row=self.graph.layer_tileinfo[layer_id]['max_row_mix'][i],
+                                                                read_column=self.graph.layer_tileinfo[layer_id]['max_column_mix'][i],
+                                                                indata=0, rdata=0, inprecision=inputbit,
+                                                                PE_num=temp_PE_num[i],
+                                                                default_inbuf_size=self.graph.max_inbuf_size,
+                                                                default_outbuf_size=self.graph.max_outbuf_size,
+                                                                device_type=temp_device_type[i],
+                                                                xbar_size=[int(temp_xbar_size[i]),int(temp_xbar_size[i])],
+                                                                mix_mode=mix_mode
+                                                                )
+
+                            if temp_tile_latency0.tile_latency>temp_tile_latency_max:
+                                temp_tile_latency_max=temp_tile_latency0.tile_latency
+                                temp_tile_latency = temp_tile_latency0
+
+                    elif mix_mode==3:
+
+                        temp_tile_latency_max=0
+                        for i in range(len(self.graph.layer_tileinfo[layer_id]['tile_max_row'])):
+
+                            temp_tile_latency = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
+                                                                read_row=self.graph.layer_tileinfo[layer_id]['tile_max_row'][i],
+                                                                read_column=self.graph.layer_tileinfo[layer_id]['tile_max_column'][i],
+                                                                indata=0, rdata=0, inprecision=inputbit,
+                                                                PE_num=self.graph.layer_tileinfo[layer_id]['max_PE'],
+                                                                default_inbuf_size=self.graph.max_inbuf_size,
+                                                                default_outbuf_size=self.graph.max_outbuf_size,
+                                                                device_type=self.graph.layer_tileinfo[layer_id]['device_type'],
+                                                                xbar_size=[int(self.graph.layer_tileinfo[layer_id]['xbar_size'][i]),int(self.graph.layer_tileinfo[layer_id]['xbar_size'][i])],
+                                                                mix_mode=mix_mode
+                                                                )  
+                            if temp_tile_latency.tile_latency>temp_tile_latency_max:
+                                temp_tile_latency_max=temp_tile_latency.tile_latency  
+                    elif mix_mode==4:
+                        temp_tile_latency = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
+                                                              read_row=self.graph.layer_tileinfo[layer_id]['max_row'],
+                                                              read_column=self.graph.layer_tileinfo[layer_id]['max_column'],
+                                                              indata=0, rdata=0, inprecision=inputbit,
+                                                              device_type=self.graph.layer_tileinfo[layer_id]['device_type'],
+                                                              PE_num=self.graph.layer_tileinfo[layer_id]['max_PE'],
+                                                              default_inbuf_size=self.graph.max_inbuf_size,
+                                                              default_outbuf_size=self.graph.max_outbuf_size,
+                                                              xbar_size=[int(self.graph.layer_tileinfo[layer_id]['xbar_size']),int(self.graph.layer_tileinfo[layer_id]['xbar_size'])],
+                                                              mix_mode=mix_mode
+                                                              ) 
+                    #assert 0
+                    #linqiushi above
+                    #linqiushi modified:
+                    if mix_mode==3:
+                        temp_tile_latency.outbuf.calculate_buf_read_latency(rdata = (self.graph.layer_tileinfo[layer_id]['tile_max_column'][0]*
+                                                                                 outputbit*self.graph.layer_tileinfo[layer_id]['max_PE']/8))
+                        temp_tile_latency.tile_buf_rlatency = temp_tile_latency.outbuf.buf_rlatency
+                        if self.Booksim_Flag == 0 :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                        (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['tile_max_column'][0] *
+                                        self.graph.layer_tileinfo[layer_id]['max_PE'] * outputbit / self.inter_tile_bandwidth)
+                        else :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                        (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['tile_max_column'][0] *
+                                        self.graph.layer_tileinfo[layer_id]['max_PE'] * outputbit / self.inter_tile_bandwidth) + self.Merge_Latency[layer_id] *  1000 / self.freq
+
+                    elif mix_mode==2:
+
+                        MAX=0
+                        for i in range(len(temp_pos)):
+                            j=temp_pos[i][0]
+                            k=temp_pos[i][1]
+
+                            if MAX<self.graph.layer_tileinfo[layer_id]['max_column_mix'][i]*self.graph.layer_tileinfo[layer_id]['max_PE'][j][k]:
+                                MAX=self.graph.layer_tileinfo[layer_id]['max_column_mix'][i]*self.graph.layer_tileinfo[layer_id]['max_PE'][j][k]
+                        temp_tile_latency.outbuf.calculate_buf_read_latency(rdata = (MAX*outputbit/8))
+                        temp_tile_latency.tile_buf_rlatency = temp_tile_latency.outbuf.buf_rlatency
+                        if self.Booksim_Flag == 0 :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                        (temp_tile_latency.digital_period +MAX * outputbit / self.inter_tile_bandwidth)
+                        else :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                        (temp_tile_latency.digital_period +MAX * outputbit / self.inter_tile_bandwidth) *  1000 / self.freq + self.Merge_Latency[layer_id] *  1000 / self.freq
+
+                        print("现在是",MAX,MAX*outputbit/8,merge_time)
+                    elif mix_mode==1 or mix_mode==4:
+                        temp_tile_latency.outbuf.calculate_buf_read_latency(rdata = (self.graph.layer_tileinfo[layer_id]['max_column']*
+                                                                                    outputbit*self.graph.layer_tileinfo[layer_id]['max_PE']/8))
+                        temp_tile_latency.tile_buf_rlatency = temp_tile_latency.outbuf.buf_rlatency
+                        if self.Booksim_Flag == 0 :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                        (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['max_column'] *
+                                        self.graph.layer_tileinfo[layer_id]['max_PE'] * outputbit / self.inter_tile_bandwidth)
+                        else :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                        (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['max_column'] *
+                                        self.graph.layer_tileinfo[layer_id]['max_PE'] * outputbit / self.inter_tile_bandwidth) + self.Merge_Latency[layer_id] *  1000 / self.freq
+
+
+                    # Todo: update merge time (adder tree) and transfer data volume
+                    if self.Booksim_Flag == 0 :
+                        transfer_time = self.graph.transLayer_distance[0][layer_id] * (outputchannel * outputbit / self.inter_tile_bandwidth)
+                    else :
+                        transfer_time = self.graph.transLayer_distance[0][layer_id] * (outputchannel * outputbit / self.inter_tile_bandwidth) + (self.Trans_Latency[layer_id] ) *  1000 / self.freq
+
+                    print("transfertime",transfer_time)
+                    cur_multiple = self.multiple[layer_id]
+                    split_size = Split_map(padding=padding, outputsize=output_size[1], multiple=cur_multiple)
+                    self.layer_split.append(split_size)
+                    max_time = [0] * cur_multiple
+                    # Todo: update transfer data volume
+                    for i in range(output_size[0]):
+                        for m in range(cur_multiple):
+                            for j in range(split_size[m]):
+                                self.pre_max_time = max_time[m]
+                                if (i == 0) & (j == 0):
+                                    # the first output
+                                    if mode == 0:
+                                        if cur_multiple == 1:
+                                            indata = input_channel_PE * (input_size[1] * max(kernelsize - padding - 1, 0) +
+                                                                         max(kernelsize - padding, 0)) * inputbit / 8
+                                        elif m == 0:
+                                            temp_insize = inoutsize_conversion(kernelsize=kernelsize, padding=padding/2, stride=stride,
+                                                                               outputsize=split_size[m]) # only one padding column
+                                            indata = input_channel_PE * (temp_insize * max(kernelsize - padding - 1, 0) +
+                                                                         max(kernelsize - padding, 0)) * inputbit / 8
+                                        elif m == cur_multiple-1:
+                                            temp_insize = inoutsize_conversion(kernelsize=kernelsize, padding=padding/2, stride=stride,
+                                                                               outputsize=split_size[m]) # only one padding column
+                                            indata = input_channel_PE * (temp_insize * max(kernelsize - padding - 1, 0) +
+                                                                         kernelsize) * inputbit / 8
+                                        else:
+                                            temp_insize = inoutsize_conversion(kernelsize=kernelsize, padding=0, stride=stride,
+                                                                               outputsize=split_size[m]) # only one padding column
+                                            indata = input_channel_PE * (temp_insize * max(kernelsize - padding - 1, 0) +
+                                                                         kernelsize) * inputbit / 8
+                                    else:
+                                        if cur_multiple == 1:
+                                            indata = input_channel_PE * (max(kernelsize - padding, 0)**2) * inputbit / 8
+                                        elif m == 0:
+                                            indata = input_channel_PE * (max(kernelsize - padding, 0)**2) * inputbit / 8
+                                        else:
+                                            indata = input_channel_PE * (max(kernelsize-padding,0)*kernelsize) * inputbit / 8                  
+                                    # fill the line buffer
+                                    rdata = self.graph.layer_tileinfo[layer_id]['max_row'] * inputbit / 8
+                                    temp_tile_latency.update_tile_latency(indata=indata, rdata=rdata)
+                                    temp_tile_latency_max=temp_tile_latency.tile_latency
+                                    if mix_mode==1 or mix_mode==4:
+                                        if self.Pipe_flag == 1 :
+                                            compute_time = max(temp_tile_latency.tile_latency, merge_time + transfer_time)
+                                        else :
+                                            compute_time = temp_tile_latency.tile_latency + merge_time + transfer_time 
+                                    elif mix_mode==2 or mix_mode==3:
+                                        if self.Pipe_flag == 1 :
+                                            compute_time = max(temp_tile_latency_max, merge_time + transfer_time)
+                                        else :
+                                            compute_time = temp_tile_latency_max + merge_time + transfer_time
+                                    begin_time = 0
+                                    self.pipe_result_update(layer_type='conv', begin_time=begin_time, compute_time=compute_time, layer_id=layer_id,
+                                                            temp_tile_latency=temp_tile_latency, merge_time=merge_time, transfer_time=transfer_time)
+                                    max_time[m] = compute_time
+                                elif j == 0:
+                                    if mode == 0:
+                                        if cur_multiple == 1:
+                                            indata = input_channel_PE * (input_size[1]*(stride-1)+max(kernelsize-padding,0)) * inputbit / 8
+                                        elif m == 0:
+                                            temp_insize = inoutsize_conversion(kernelsize=kernelsize, padding=padding/2, stride=stride,
+                                                                               outputsize=split_size[m]) # only one padding column
+                                            indata = input_channel_PE * (temp_insize*(stride-1)+max(kernelsize - padding, 0)) * inputbit / 8
+                                        elif m == cur_multiple-1:
+                                            temp_insize = inoutsize_conversion(kernelsize=kernelsize, padding=padding/2, stride=stride,
+                                                                               outputsize=split_size[m]) # only one padding column
+                                            indata = input_channel_PE * (temp_insize * (stride-1) + kernelsize) * inputbit / 8
+                                        else:
+                                            temp_insize = inoutsize_conversion(kernelsize=kernelsize, padding=0, stride=stride,
+                                                                               outputsize=split_size[m]) # only one padding column
+                                            indata = input_channel_PE * (temp_insize * (stride-1) + kernelsize) * inputbit / 8
+                                    else:
+                                        if cur_multiple == 1:
+                                            indata = input_channel_PE * stride * max(kernelsize-padding,0) * inputbit / 8
+                                        elif m == 0:
+                                            indata = input_channel_PE * stride * max(kernelsize-padding,0) * inputbit /8
+                                        else:
+                                            indata = input_channel_PE * stride * kernelsize * inputbit / 8
+                                    rdata = self.graph.layer_tileinfo[layer_id]['max_row'] * inputbit / 8
+                                    temp_tile_latency.update_tile_latency(indata=indata, rdata=rdata)
+                                    temp_tile_latency_max=temp_tile_latency.tile_latency
+                                    # TODO: Check
+                                    begin_time = self.pre_max_time
+                                    if mix_mode==1 or mix_mode==4:
+                                        if self.Pipe_flag == 1 :
+                                            compute_time = max(temp_tile_latency.tile_latency, merge_time + transfer_time) + begin_time
+                                        else :
+                                            compute_time = temp_tile_latency.tile_latency + merge_time + transfer_time + begin_time 
+                                    elif mix_mode==2 or mix_mode==3:
+                                        if self.Pipe_flag == 1 :
+                                            compute_time = max(temp_tile_latency_max, merge_time + transfer_time) + begin_time
+                                        else :
+                                            compute_time = temp_tile_latency_max + merge_time + transfer_time + begin_time
+                                    #change to temp_tile_latency_max
+                                    self.pipe_result_update(layer_type='conv', begin_time=begin_time, compute_time=compute_time, layer_id=layer_id,
+                                                            temp_tile_latency=temp_tile_latency, merge_time=merge_time, transfer_time=transfer_time)
+                                    max_time[m] = compute_time
+                                else:
+                                    # ignore the last several columns with padding
+                                    if mode == 0:
+                                        indata = input_channel_PE * stride * inputbit /8
+                                    else:
+                                        if i == 0:
+                                            indata = input_channel_PE * stride * kernelsize * inputbit / 8
+                                        else:
+                                            indata = input_channel_PE * stride **2 * inputbit / 8
+                                    rdata = stride * kernelsize * input_channel_PE * inputbit / 8
+                                    temp_tile_latency.update_tile_latency(indata=indata, rdata=rdata)
+                                    temp_tile_latency_max=temp_tile_latency.tile_latency
+                                    begin_time = self.pre_max_time
+                                    if mix_mode==1 or mix_mode==4:
+                                        if self.Pipe_flag == 1 :
+                                            compute_time = max(temp_tile_latency.tile_latency, merge_time + transfer_time) + begin_time
+                                        else :
+                                            compute_time = temp_tile_latency.tile_latency + merge_time + transfer_time + begin_time 
+                                    elif mix_mode==2 or mix_mode==3:
+                                        if self.Pipe_flag == 1 :
+                                            compute_time = max(temp_tile_latency_max, merge_time + transfer_time) + begin_time
+                                        else :
+                                            compute_time = temp_tile_latency_max + merge_time + transfer_time + begin_time
+                                    self.pipe_result_update(layer_type='conv', begin_time=begin_time, compute_time=compute_time, layer_id=layer_id,
+                                                            temp_tile_latency=temp_tile_latency, merge_time=merge_time, transfer_time=transfer_time)
+                                    max_time[m] = compute_time
+                elif layer_dict['type'] == 'fc':
+                    output_size = int(layer_dict['Outfeature'])
+                    input_size = int(layer_dict['Infeature'])
+                    self.layer_split.append([input_size])
+                    inputbit = int(layer_dict['Inputbit'])
+                    outputbit = int(layer_dict['outputbit'])
+                    self.layer_latency_initial()
+                    indata = self.graph.layer_tileinfo[layer_id]['max_row'] * inputbit / 8
+                    rdata = indata
+                    if mix_mode==1:
+                        temp_tile_latency = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
+                                                                read_row=self.graph.layer_tileinfo[layer_id]['max_row'],
+                                                                read_column=self.graph.layer_tileinfo[layer_id]['max_column'],
+                                                                indata=indata, rdata=rdata, inprecision=inputbit,
+                                                                PE_num=self.graph.layer_tileinfo[layer_id]['max_PE'],
+                                                                default_inbuf_size=self.graph.max_inbuf_size,
+                                                                default_outbuf_size=self.graph.max_outbuf_size
+                                                                )
+                    #linqiushi modified
+                    if mix_mode==2:
+                        temp_device_type=[]
+                        temp_PE_num=[]
+                        temp_xbar_size=[]
+                        temp_pos=[]
+                        for i in range(self.graph.layer_tileinfo[0]['tile_num_mix'][0]):
+                            for j in range(self.graph.layer_tileinfo[0]['tile_num_mix'][1]):
+                                
+                                if self.graph.auto_layer_mapping==0:
+                                    if self.graph.layer_tileinfo[0]['layer_mapping_mix'][i][j]=='no':
+                                        pass
+                                    elif int(self.graph.layer_tileinfo[0]['layer_mapping_mix'][i][j])==layer_id:
+                                        
+                                        temp_pos.append([i,j])
+                                        temp_device_type.append(self.graph.layer_tileinfo[0]['device_type_mix'][i][j])
+                                        temp_PE_num.append((self.graph.layer_tileinfo[0]['PE_num_mix'][i][j])**2)
+                                        temp_xbar_size.append(self.graph.layer_tileinfo[0]['xbar_size_mix'][i][j])
+                                else:
+                                    if self.graph.mapping_result[i][j]==layer_id:
+                                        temp_pos.append([i,j])
+                                        temp_device_type.append(self.graph.layer_tileinfo[0]['device_type_mix'][i][j])
+                                        temp_PE_num.append(self.graph.layer_tileinfo[layer_id]['max_PE'][i][j])
+                                        temp_xbar_size.append(self.graph.layer_tileinfo[0]['xbar_size_mix'][i][j])
+                                    
+                        
+                        temp_tile_latency_max=0
+                        for i in range(len(temp_device_type)):
+                            #max_PE,row,column待覆盖
+                            temp_tile_latency0 = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
+                                                                read_row=self.graph.layer_tileinfo[layer_id]['max_row_mix'][i],
+                                                            read_column=self.graph.layer_tileinfo[layer_id]['max_column_mix'][i],
+                                                                indata=0, rdata=0, inprecision=inputbit,
+                                                                PE_num=temp_PE_num[i],
+                                                                default_inbuf_size=self.graph.max_inbuf_size,
+                                                                default_outbuf_size=self.graph.max_outbuf_size,
+                                                                device_type=temp_device_type[i],
+                                                                xbar_size=[int(temp_xbar_size[i]),int(temp_xbar_size[i])],
+                                                                mix_mode=mix_mode
+                                                                )
+                            if temp_tile_latency0.tile_latency>temp_tile_latency_max:
+                                temp_tile_latency_max=temp_tile_latency0.tile_latency
+                                temp_tile_latency = temp_tile_latency0
+                                
+                    elif mix_mode==3:
+                
+                        temp_tile_latency_max=0
+                        for i in range(len(self.graph.layer_tileinfo[layer_id]['tile_max_row'])):
+                            
+                            temp_tile_latency = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
+                                                                read_row=self.graph.layer_tileinfo[layer_id]['tile_max_row'][i],
+                                                                read_column=self.graph.layer_tileinfo[layer_id]['tile_max_column'][i],
+                                                                indata=0, rdata=0, inprecision=inputbit,
+                                                                PE_num=self.graph.layer_tileinfo[layer_id]['max_PE'],
+                                                                default_inbuf_size=self.graph.max_inbuf_size,
+                                                                default_outbuf_size=self.graph.max_outbuf_size,
+                                                                device_type=self.graph.layer_tileinfo[layer_id]['device_type'],
+                                                                xbar_size=[int(self.graph.layer_tileinfo[layer_id]['xbar_size'][i]),int(self.graph.layer_tileinfo[layer_id]['xbar_size'][i])],
+                                                                mix_mode=mix_mode
+                                                                )  
+                            if temp_tile_latency.tile_latency>temp_tile_latency_max:
+                                temp_tile_latency_max=temp_tile_latency.tile_latency 
+                    elif mix_mode==4:
+                        temp_tile_latency = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
+                                                            read_row=self.graph.layer_tileinfo[layer_id]['max_row'],
+                                                            read_column=self.graph.layer_tileinfo[layer_id]['max_column'],
                                                             indata=0, rdata=0, inprecision=inputbit,
+                                                            device_type=self.graph.layer_tileinfo[layer_id]['device_type'],
                                                             PE_num=self.graph.layer_tileinfo[layer_id]['max_PE'],
                                                             default_inbuf_size=self.graph.max_inbuf_size,
                                                             default_outbuf_size=self.graph.max_outbuf_size,
-                                                            device_type=self.graph.layer_tileinfo[layer_id]['device_type'],
-                                                            xbar_size=[int(self.graph.layer_tileinfo[layer_id]['xbar_size'][i]),int(self.graph.layer_tileinfo[layer_id]['xbar_size'][i])],
+                                                            xbar_size=[int(self.graph.layer_tileinfo[layer_id]['xbar_size']),int(self.graph.layer_tileinfo[layer_id]['xbar_size'])],
                                                             mix_mode=mix_mode
-                                                            )  
-                        if temp_tile_latency.tile_latency>temp_tile_latency_max:
-                            temp_tile_latency_max=temp_tile_latency.tile_latency  
-                elif mix_mode==4:
-                    temp_tile_latency = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
-                                                          read_row=self.graph.layer_tileinfo[layer_id]['max_row'],
-                                                          read_column=self.graph.layer_tileinfo[layer_id]['max_column'],
-                                                          indata=0, rdata=0, inprecision=inputbit,
-                                                          device_type=self.graph.layer_tileinfo[layer_id]['device_type'],
-                                                          PE_num=self.graph.layer_tileinfo[layer_id]['max_PE'],
-                                                          default_inbuf_size=self.graph.max_inbuf_size,
-                                                          default_outbuf_size=self.graph.max_outbuf_size,
-                                                          xbar_size=[int(self.graph.layer_tileinfo[layer_id]['xbar_size']),int(self.graph.layer_tileinfo[layer_id]['xbar_size'])],
-                                                          mix_mode=mix_mode
-                                                          ) 
-                #assert 0
-                #linqiushi above
-                #linqiushi modified:
-                if mix_mode==3:
-                    temp_tile_latency.outbuf.calculate_buf_read_latency(rdata = (self.graph.layer_tileinfo[layer_id]['tile_max_column'][0]*
-                                                                             outputbit*self.graph.layer_tileinfo[layer_id]['max_PE']/8))
-                    temp_tile_latency.tile_buf_rlatency = temp_tile_latency.outbuf.buf_rlatency
-                    if self.Booksim_Flag == 0 :
-                        merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
-                                    (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['tile_max_column'][0] *
-                                    self.graph.layer_tileinfo[layer_id]['max_PE'] * outputbit / self.inter_tile_bandwidth)
-                    else :
-                        merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
-                                    (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['tile_max_column'][0] *
-                                    self.graph.layer_tileinfo[layer_id]['max_PE'] * outputbit / self.inter_tile_bandwidth) + self.Merge_Latency[layer_id] *  1000 / self.freq
-
-                elif mix_mode==2:
-                    
-                    MAX=0
-                    for i in range(len(temp_pos)):
-                        j=temp_pos[i][0]
-                        k=temp_pos[i][1]
-                        
-                        if MAX<self.graph.layer_tileinfo[layer_id]['max_column_mix'][i]*self.graph.layer_tileinfo[layer_id]['max_PE'][j][k]:
-                            MAX=self.graph.layer_tileinfo[layer_id]['max_column_mix'][i]*self.graph.layer_tileinfo[layer_id]['max_PE'][j][k]
-                    temp_tile_latency.outbuf.calculate_buf_read_latency(rdata = (MAX*outputbit/8))
-                    temp_tile_latency.tile_buf_rlatency = temp_tile_latency.outbuf.buf_rlatency
-                    if self.Booksim_Flag == 0 :
-                        merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
-                                    (temp_tile_latency.digital_period +MAX * outputbit / self.inter_tile_bandwidth)
-                    else :
-                        merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
-                                    (temp_tile_latency.digital_period +MAX * outputbit / self.inter_tile_bandwidth) *  1000 / self.freq + self.Merge_Latency[layer_id] *  1000 / self.freq
-
-                    print("现在是",MAX,MAX*outputbit/8,merge_time)
-                elif mix_mode==1 or mix_mode==4:
-                    temp_tile_latency.outbuf.calculate_buf_read_latency(rdata = (self.graph.layer_tileinfo[layer_id]['max_column']*
+                                                            ) 
+                    #assert 0
+                    #linqiushi above
+                    if mix_mode==3:
+                        temp_tile_latency.outbuf.calculate_buf_read_latency(rdata = (self.graph.layer_tileinfo[layer_id]['tile_max_column'][0]*
                                                                                 outputbit*self.graph.layer_tileinfo[layer_id]['max_PE']/8))
-                    temp_tile_latency.tile_buf_rlatency = temp_tile_latency.outbuf.buf_rlatency
+                        temp_tile_latency.tile_buf_rlatency = temp_tile_latency.outbuf.buf_rlatency
+                        if self.Booksim_Flag == 0 :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['tile_max_column'][0] *
+                                self.graph.layer_tileinfo[layer_id]['max_PE'] * outputbit / self.inter_tile_bandwidth)
+                        else :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['tile_max_column'][0] *
+                                self.graph.layer_tileinfo[layer_id]['max_PE'] * outputbit / self.inter_tile_bandwidth) + self.Merge_Latency[layer_id] *  1000 / self.freq
+                    elif mix_mode==2:
+                
+                        MAX=0
+                        for i in range(len(temp_pos)):
+                            j=temp_pos[i][0]
+                            k=temp_pos[i][1]
+                            if MAX<self.graph.layer_tileinfo[layer_id]['max_column_mix'][i]*self.graph.layer_tileinfo[layer_id]['max_PE'][j][k]:
+                                MAX=self.graph.layer_tileinfo[layer_id]['max_column_mix'][i]*self.graph.layer_tileinfo[layer_id]['max_PE'][j][k]
+                        temp_tile_latency.outbuf.calculate_buf_read_latency(rdata = (MAX*outputbit/8))
+                        temp_tile_latency.tile_buf_rlatency = temp_tile_latency.outbuf.buf_rlatency
+                        if self.Booksim_Flag == 0 :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                    (temp_tile_latency.digital_period +MAX * outputbit / self.inter_tile_bandwidth)
+                        else :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                    (temp_tile_latency.digital_period +MAX * outputbit / self.inter_tile_bandwidth) + self.Merge_Latency[layer_id] *  1000 / self.freq
+                        
+                    elif mix_mode==1 or mix_mode==4:
+                        temp_tile_latency.outbuf.calculate_buf_read_latency(rdata = (self.graph.layer_tileinfo[layer_id]['max_column']*
+                                                                                    outputbit*self.graph.layer_tileinfo[layer_id]['max_PE']/8))
+                        temp_tile_latency.tile_buf_rlatency = temp_tile_latency.outbuf.buf_rlatency
+                        if self.Booksim_Flag == 0 :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                        (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['max_column'] *
+                                        self.graph.layer_tileinfo[layer_id]['max_PE'] * outputbit / self.inter_tile_bandwidth)
+                        else :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                        (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['max_column'] *
+                                        self.graph.layer_tileinfo[layer_id]['max_PE'] * outputbit / self.inter_tile_bandwidth) + self.Merge_Latency[layer_id] *  1000 / self.freq
+                        
+                    # Todo: update merge time (adder tree) and transfer data volume
                     if self.Booksim_Flag == 0 :
-                        merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
-                                    (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['max_column'] *
-                                    self.graph.layer_tileinfo[layer_id]['max_PE'] * outputbit / self.inter_tile_bandwidth)
+                        transfer_time = self.graph.transLayer_distance[0][layer_id] * (output_size * outputbit / self.inter_tile_bandwidth)
                     else :
-                        merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
-                                    (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['max_column'] *
-                                    self.graph.layer_tileinfo[layer_id]['max_PE'] * outputbit / self.inter_tile_bandwidth) + self.Merge_Latency[layer_id] *  1000 / self.freq
-
+                        transfer_time = self.graph.transLayer_distance[0][layer_id] * (output_size * outputbit / self.inter_tile_bandwidth) + (self.Trans_Latency[layer_id] ) *  1000 / self.freq
+                    temp_Inputindex = self.graph.layer_tileinfo[layer_id]['Inputindex']
+                    begin_time = 0
+                    if mix_mode==1 or mix_mode==4:
+                        if self.Pipe_flag == 1 :
+                            compute_time = max(temp_tile_latency.tile_latency, merge_time + transfer_time) + begin_time
+                        else :
+                            compute_time = temp_tile_latency.tile_latency + merge_time + transfer_time + begin_time 
+                    elif mix_mode==2 or mix_mode==3:
+                        if self.Pipe_flag == 1 :
+                            compute_time = max(temp_tile_latency_max, merge_time + transfer_time) + begin_time
+                        else :
+                            compute_time = temp_tile_latency_max + merge_time + transfer_time + begin_time
                     
-                # Todo: update merge time (adder tree) and transfer data volume
-                if self.Booksim_Flag == 0 :
-                    transfer_time = self.graph.transLayer_distance[0][layer_id] * (outputchannel * outputbit / self.inter_tile_bandwidth)
-                else :
-                    transfer_time = self.graph.transLayer_distance[0][layer_id] * (outputchannel * outputbit / self.inter_tile_bandwidth) + (self.Trans_Latency[layer_id] ) *  1000 / self.freq
+                    self.pipe_result_update(layer_type='fc', begin_time=begin_time, compute_time=compute_time, layer_id=layer_id,
+                                            temp_tile_latency=temp_tile_latency, merge_time=merge_time, transfer_time=transfer_time, output_size=output_size)               
+                elif layer_dict['type'] == 'MM1':
+                    output_size = int(layer_dict['Outfeature'])
+                    input_size = int(layer_dict['Infeature'])
+                    self.layer_split.append([input_size])
+                    inputbit = int(layer_dict['Inputbit'])
+                    outputbit = int(layer_dict['outputbit'])
+                    input_size1 = layer_dict['input1_size']
+                    token_num = int(input_size1[0])
+                    self.layer_latency_initial()
+                    indata = self.graph.layer_tileinfo[layer_id]['max_row'] * inputbit / 8 * token_num
+                    rdata = indata
+                    if mix_mode==1:
+                        temp_tile_latency = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
+                                                                read_row=self.graph.layer_tileinfo[layer_id]['max_row'],
+                                                                read_column=self.graph.layer_tileinfo[layer_id]['max_column'],
+                                                                indata=indata, rdata=rdata, inprecision=inputbit,
+                                                                PE_num=self.graph.layer_tileinfo[layer_id]['max_PE'],
+                                                                default_inbuf_size=self.graph.max_inbuf_size,
+                                                                default_outbuf_size=self.graph.max_outbuf_size
+                                                                )
+                    #linqiushi modified
+                    if mix_mode==2:
+                        temp_device_type=[]
+                        temp_PE_num=[]
+                        temp_xbar_size=[]
+                        temp_pos=[]
+                        for i in range(self.graph.layer_tileinfo[0]['tile_num_mix'][0]):
+                            for j in range(self.graph.layer_tileinfo[0]['tile_num_mix'][1]):
+                                
+                                if self.graph.auto_layer_mapping==0:
+                                    if self.graph.layer_tileinfo[0]['layer_mapping_mix'][i][j]=='no':
+                                        pass
+                                    elif int(self.graph.layer_tileinfo[0]['layer_mapping_mix'][i][j])==layer_id:
+                                        
+                                        temp_pos.append([i,j])
+                                        temp_device_type.append(self.graph.layer_tileinfo[0]['device_type_mix'][i][j])
+                                        temp_PE_num.append((self.graph.layer_tileinfo[0]['PE_num_mix'][i][j])**2)
+                                        temp_xbar_size.append(self.graph.layer_tileinfo[0]['xbar_size_mix'][i][j])
+                                else:
+                                    if self.graph.mapping_result[i][j]==layer_id:
+                                        temp_pos.append([i,j])
+                                        temp_device_type.append(self.graph.layer_tileinfo[0]['device_type_mix'][i][j])
+                                        temp_PE_num.append(self.graph.layer_tileinfo[layer_id]['max_PE'][i][j])
+                                        temp_xbar_size.append(self.graph.layer_tileinfo[0]['xbar_size_mix'][i][j])
+                                    
+                        
+                        temp_tile_latency_max=0
+                        for i in range(len(temp_device_type)):
+                            #max_PE,row,column待覆盖
+                            temp_tile_latency0 = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
+                                                                read_row=self.graph.layer_tileinfo[layer_id]['max_row_mix'][i],
+                                                            read_column=self.graph.layer_tileinfo[layer_id]['max_column_mix'][i],
+                                                                indata=0, rdata=0, inprecision=inputbit,
+                                                                PE_num=temp_PE_num[i],
+                                                                default_inbuf_size=self.graph.max_inbuf_size,
+                                                                default_outbuf_size=self.graph.max_outbuf_size,
+                                                                device_type=temp_device_type[i],
+                                                                xbar_size=[int(temp_xbar_size[i]),int(temp_xbar_size[i])],
+                                                                mix_mode=mix_mode
+                                                                )
+                            if temp_tile_latency0.tile_latency>temp_tile_latency_max:
+                                temp_tile_latency_max=temp_tile_latency0.tile_latency
+                                temp_tile_latency = temp_tile_latency0
+                                
+                    elif mix_mode==3:
+                
+                        temp_tile_latency_max=0
+                        for i in range(len(self.graph.layer_tileinfo[layer_id]['tile_max_row'])):
+                            
+                            temp_tile_latency = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
+                                                                read_row=self.graph.layer_tileinfo[layer_id]['tile_max_row'][i],
+                                                                read_column=self.graph.layer_tileinfo[layer_id]['tile_max_column'][i],
+                                                                indata=0, rdata=0, inprecision=inputbit,
+                                                                PE_num=self.graph.layer_tileinfo[layer_id]['max_PE'],
+                                                                default_inbuf_size=self.graph.max_inbuf_size,
+                                                                default_outbuf_size=self.graph.max_outbuf_size,
+                                                                device_type=self.graph.layer_tileinfo[layer_id]['device_type'],
+                                                                xbar_size=[int(self.graph.layer_tileinfo[layer_id]['xbar_size'][i]),int(self.graph.layer_tileinfo[layer_id]['xbar_size'][i])],
+                                                                mix_mode=mix_mode
+                                                                )  
+                            if temp_tile_latency.tile_latency>temp_tile_latency_max:
+                                temp_tile_latency_max=temp_tile_latency.tile_latency 
+                    elif mix_mode==4:
+                        temp_tile_latency = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
+                                                            read_row=self.graph.layer_tileinfo[layer_id]['max_row'],
+                                                            read_column=self.graph.layer_tileinfo[layer_id]['max_column'],
+                                                            indata=0, rdata=0, inprecision=inputbit,
+                                                            device_type=self.graph.layer_tileinfo[layer_id]['device_type'],
+                                                            PE_num=self.graph.layer_tileinfo[layer_id]['max_PE'],
+                                                            default_inbuf_size=self.graph.max_inbuf_size,
+                                                            default_outbuf_size=self.graph.max_outbuf_size,
+                                                            xbar_size=[int(self.graph.layer_tileinfo[layer_id]['xbar_size']),int(self.graph.layer_tileinfo[layer_id]['xbar_size'])],
+                                                            mix_mode=mix_mode
+                                                            ) 
+                    #assert 0
+                    #linqiushi above
+                    if mix_mode==3:
+                        temp_tile_latency.outbuf.calculate_buf_read_latency(rdata = (self.graph.layer_tileinfo[layer_id]['tile_max_column'][0]*
+                                                                                outputbit*self.graph.layer_tileinfo[layer_id]['max_PE']/8) * token_num)
+                        temp_tile_latency.tile_buf_rlatency = temp_tile_latency.outbuf.buf_rlatency
+                        if self.Booksim_Flag == 0 :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['tile_max_column'][0] *
+                                self.graph.layer_tileinfo[layer_id]['max_PE'] * token_num * outputbit / self.inter_tile_bandwidth)
+                        else :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['tile_max_column'][0] *
+                                self.graph.layer_tileinfo[layer_id]['max_PE'] * token_num * outputbit / self.inter_tile_bandwidth) + self.Merge_Latency[layer_id] *  1000 / self.freq
+                    elif mix_mode==2:
+                
+                        MAX=0
+                        for i in range(len(temp_pos)):
+                            j=temp_pos[i][0]
+                            k=temp_pos[i][1]
+                            if MAX<self.graph.layer_tileinfo[layer_id]['max_column_mix'][i]*self.graph.layer_tileinfo[layer_id]['max_PE'][j][k]:
+                                MAX=self.graph.layer_tileinfo[layer_id]['max_column_mix'][i]*self.graph.layer_tileinfo[layer_id]['max_PE'][j][k] * token_num
+                        temp_tile_latency.outbuf.calculate_buf_read_latency(rdata = (MAX*outputbit/8))
+                        temp_tile_latency.tile_buf_rlatency = temp_tile_latency.outbuf.buf_rlatency
+                        if self.Booksim_Flag == 0 :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                    (temp_tile_latency.digital_period +MAX * outputbit / self.inter_tile_bandwidth)
+                        else :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                    (temp_tile_latency.digital_period +MAX * outputbit / self.inter_tile_bandwidth) + self.Merge_Latency[layer_id] *  1000 / self.freq
+                        
+                    elif mix_mode==1 or mix_mode==4:
+                        temp_tile_latency.outbuf.calculate_buf_read_latency(rdata = (self.graph.layer_tileinfo[layer_id]['max_column']*
+                                                                                    outputbit*self.graph.layer_tileinfo[layer_id]['max_PE']/8) * token_num)
+                        temp_tile_latency.tile_buf_rlatency = temp_tile_latency.outbuf.buf_rlatency
+                        if self.Booksim_Flag == 0 :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                        (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['max_column'] *
+                                        self.graph.layer_tileinfo[layer_id]['max_PE'] * token_num * outputbit / self.inter_tile_bandwidth)
+                        else :
+                            merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                        (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['max_column'] *
+                                        self.graph.layer_tileinfo[layer_id]['max_PE'] * token_num * outputbit / self.inter_tile_bandwidth) + self.Merge_Latency[layer_id] *  1000 / self.freq
+                        
+                    # Todo: update merge time (adder tree) and transfer data volume
+                    if self.Booksim_Flag == 0 :
+                        transfer_time = self.graph.transLayer_distance[0][layer_id] * (output_size * token_num * outputbit / self.inter_tile_bandwidth)
+                    else :
+                        transfer_time = self.graph.transLayer_distance[0][layer_id] * (output_size * token_num * outputbit / self.inter_tile_bandwidth) + (self.Trans_Latency[layer_id] ) *  1000 / self.freq
+                    temp_Inputindex = self.graph.layer_tileinfo[layer_id]['Inputindex']
+                    begin_time = 0
+                    if mix_mode==1 or mix_mode==4:
+                        if self.Pipe_flag == 1 :
+                            compute_time = max(temp_tile_latency.tile_latency, merge_time + transfer_time) + begin_time
+                        else :
+                            compute_time = temp_tile_latency.tile_latency + merge_time + transfer_time + begin_time 
+                    elif mix_mode==2 or mix_mode==3:
+                        if self.Pipe_flag == 1 :
+                            compute_time = max(temp_tile_latency_max, merge_time + transfer_time) + begin_time
+                        else :
+                            compute_time = temp_tile_latency_max + merge_time + transfer_time + begin_time
+                    
+                    self.pipe_result_update(layer_type='MM1', begin_time=begin_time, compute_time=compute_time, layer_id=layer_id,
+                                            temp_tile_latency=temp_tile_latency, merge_time=merge_time, transfer_time=transfer_time, output_size=output_size)               
 
-                print("transfertime",transfer_time)
-                cur_multiple = self.multiple[layer_id]
-                split_size = Split_map(padding=padding, outputsize=output_size[1], multiple=cur_multiple)
-                self.layer_split.append(split_size)
-                max_time = [0] * cur_multiple
-                # Todo: update transfer data volume
-                for i in range(output_size[0]):
-                    for m in range(cur_multiple):
-                        for j in range(split_size[m]):
-                            self.pre_max_time = max_time[m]
-                            if (i == 0) & (j == 0):
-                                # the first output
-                                if mode == 0:
-                                    if cur_multiple == 1:
-                                        indata = input_channel_PE * (input_size[1] * max(kernelsize - padding - 1, 0) +
-                                                                     max(kernelsize - padding, 0)) * inputbit / 8
-                                    elif m == 0:
-                                        temp_insize = inoutsize_conversion(kernelsize=kernelsize, padding=padding/2, stride=stride,
-                                                                           outputsize=split_size[m]) # only one padding column
-                                        indata = input_channel_PE * (temp_insize * max(kernelsize - padding - 1, 0) +
-                                                                     max(kernelsize - padding, 0)) * inputbit / 8
-                                    elif m == cur_multiple-1:
-                                        temp_insize = inoutsize_conversion(kernelsize=kernelsize, padding=padding/2, stride=stride,
-                                                                           outputsize=split_size[m]) # only one padding column
-                                        indata = input_channel_PE * (temp_insize * max(kernelsize - padding - 1, 0) +
-                                                                     kernelsize) * inputbit / 8
-                                    else:
-                                        temp_insize = inoutsize_conversion(kernelsize=kernelsize, padding=0, stride=stride,
-                                                                           outputsize=split_size[m]) # only one padding column
-                                        indata = input_channel_PE * (temp_insize * max(kernelsize - padding - 1, 0) +
-                                                                     kernelsize) * inputbit / 8
-                                else:
-                                    if cur_multiple == 1:
-                                        indata = input_channel_PE * (max(kernelsize - padding, 0)**2) * inputbit / 8
-                                    elif m == 0:
-                                        indata = input_channel_PE * (max(kernelsize - padding, 0)**2) * inputbit / 8
-                                    else:
-                                        indata = input_channel_PE * (max(kernelsize-padding,0)*kernelsize) * inputbit / 8                  
-                                # fill the line buffer
-                                rdata = self.graph.layer_tileinfo[layer_id]['max_row'] * inputbit / 8
-                                temp_tile_latency.update_tile_latency(indata=indata, rdata=rdata)
-                                temp_tile_latency_max=temp_tile_latency.tile_latency
-                                if mix_mode==1 or mix_mode==4:
-                                    if self.Pipe_flag == 1 :
-                                        compute_time = max(temp_tile_latency.tile_latency, merge_time + transfer_time)
-                                    else :
-                                        compute_time = temp_tile_latency.tile_latency + merge_time + transfer_time 
-                                elif mix_mode==2 or mix_mode==3:
-                                    if self.Pipe_flag == 1 :
-                                        compute_time = max(temp_tile_latency_max, merge_time + transfer_time)
-                                    else :
-                                        compute_time = temp_tile_latency_max + merge_time + transfer_time
-                                begin_time = 0
-                                self.pipe_result_update(layer_type='conv', begin_time=begin_time, compute_time=compute_time, layer_id=layer_id,
-                                                        temp_tile_latency=temp_tile_latency, merge_time=merge_time, transfer_time=transfer_time)
-                                max_time[m] = compute_time
-                            elif j == 0:
-                                if mode == 0:
-                                    if cur_multiple == 1:
-                                        indata = input_channel_PE * (input_size[1]*(stride-1)+max(kernelsize-padding,0)) * inputbit / 8
-                                    elif m == 0:
-                                        temp_insize = inoutsize_conversion(kernelsize=kernelsize, padding=padding/2, stride=stride,
-                                                                           outputsize=split_size[m]) # only one padding column
-                                        indata = input_channel_PE * (temp_insize*(stride-1)+max(kernelsize - padding, 0)) * inputbit / 8
-                                    elif m == cur_multiple-1:
-                                        temp_insize = inoutsize_conversion(kernelsize=kernelsize, padding=padding/2, stride=stride,
-                                                                           outputsize=split_size[m]) # only one padding column
-                                        indata = input_channel_PE * (temp_insize * (stride-1) + kernelsize) * inputbit / 8
-                                    else:
-                                        temp_insize = inoutsize_conversion(kernelsize=kernelsize, padding=0, stride=stride,
-                                                                           outputsize=split_size[m]) # only one padding column
-                                        indata = input_channel_PE * (temp_insize * (stride-1) + kernelsize) * inputbit / 8
-                                else:
-                                    if cur_multiple == 1:
-                                        indata = input_channel_PE * stride * max(kernelsize-padding,0) * inputbit / 8
-                                    elif m == 0:
-                                        indata = input_channel_PE * stride * max(kernelsize-padding,0) * inputbit /8
-                                    else:
-                                        indata = input_channel_PE * stride * kernelsize * inputbit / 8
-                                rdata = self.graph.layer_tileinfo[layer_id]['max_row'] * inputbit / 8
-                                temp_tile_latency.update_tile_latency(indata=indata, rdata=rdata)
-                                temp_tile_latency_max=temp_tile_latency.tile_latency
-                                # TODO: Check
-                                begin_time = self.pre_max_time
-                                if mix_mode==1 or mix_mode==4:
-                                    if self.Pipe_flag == 1 :
-                                        compute_time = max(temp_tile_latency.tile_latency, merge_time + transfer_time) + begin_time
-                                    else :
-                                        compute_time = temp_tile_latency.tile_latency + merge_time + transfer_time + begin_time 
-                                elif mix_mode==2 or mix_mode==3:
-                                    if self.Pipe_flag == 1 :
-                                        compute_time = max(temp_tile_latency_max, merge_time + transfer_time) + begin_time
-                                    else :
-                                        compute_time = temp_tile_latency_max + merge_time + transfer_time + begin_time
-                                #change to temp_tile_latency_max
-                                self.pipe_result_update(layer_type='conv', begin_time=begin_time, compute_time=compute_time, layer_id=layer_id,
-                                                        temp_tile_latency=temp_tile_latency, merge_time=merge_time, transfer_time=transfer_time)
-                                max_time[m] = compute_time
-                            else:
-                                # ignore the last several columns with padding
-                                if mode == 0:
-                                    indata = input_channel_PE * stride * inputbit /8
-                                else:
-                                    if i == 0:
-                                        indata = input_channel_PE * stride * kernelsize * inputbit / 8
-                                    else:
-                                        indata = input_channel_PE * stride **2 * inputbit / 8
-                                rdata = stride * kernelsize * input_channel_PE * inputbit / 8
-                                temp_tile_latency.update_tile_latency(indata=indata, rdata=rdata)
-                                temp_tile_latency_max=temp_tile_latency.tile_latency
-                                begin_time = self.pre_max_time
-                                if mix_mode==1 or mix_mode==4:
-                                    if self.Pipe_flag == 1 :
-                                        compute_time = max(temp_tile_latency.tile_latency, merge_time + transfer_time) + begin_time
-                                    else :
-                                        compute_time = temp_tile_latency.tile_latency + merge_time + transfer_time + begin_time 
-                                elif mix_mode==2 or mix_mode==3:
-                                    if self.Pipe_flag == 1 :
-                                        compute_time = max(temp_tile_latency_max, merge_time + transfer_time) + begin_time
-                                    else :
-                                        compute_time = temp_tile_latency_max + merge_time + transfer_time + begin_time
-                                self.pipe_result_update(layer_type='conv', begin_time=begin_time, compute_time=compute_time, layer_id=layer_id,
-                                                        temp_tile_latency=temp_tile_latency, merge_time=merge_time, transfer_time=transfer_time)
-                                max_time[m] = compute_time
             else:
                 if layer_dict['type'] == 'conv':
                     self.layer_latency_initial()
@@ -1415,6 +1841,7 @@ class Model_latency():
                                                                 xbar_size=[int(temp_xbar_size[i]),int(temp_xbar_size[i])],
                                                                 mix_mode=mix_mode
                                                                 )
+                        
                             if temp_tile_latency0.tile_latency>temp_tile_latency_max:
                                 temp_tile_latency_max=temp_tile_latency0.tile_latency
                                 temp_tile_latency = temp_tile_latency0
@@ -1480,6 +1907,7 @@ class Model_latency():
                         else :
                             merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
                                     (temp_tile_latency.digital_period +MAX * outputbit / self.inter_tile_bandwidth) + self.Merge_Latency[layer_id] *  1000 / self.freq
+                            
                         
                     elif mix_mode==1 or mix_mode==4:
                         temp_tile_latency.outbuf.calculate_buf_read_latency(rdata = (self.graph.layer_tileinfo[layer_id]['max_column']*
@@ -1553,6 +1981,7 @@ class Model_latency():
                                                         max(kernelsize - padding, 0) * kernelsize) * inputbit / 8
                                     rdata = self.graph.layer_tileinfo[layer_id]['max_row'] * inputbit / 8
                                     temp_tile_latency.update_tile_latency(indata=indata, rdata=rdata)
+                                    
                                     temp_tile_latency_max=temp_tile_latency.tile_latency
                                     temp_Inputindex = self.graph.layer_tileinfo[layer_id]['Inputindex']
                                     max_prelayer_time = 0
@@ -1620,6 +2049,10 @@ class Model_latency():
                                     rdata = self.graph.layer_tileinfo[layer_id]['max_row'] * inputbit / 8
                                     temp_tile_latency.update_tile_latency(indata=indata, rdata=rdata)
                                     temp_tile_latency_max=temp_tile_latency.tile_latency
+                                    # if layer_id==5:
+                                    #    print('1')
+                                    #    print(temp_tile_latency.tile_latency)
+                                    #    print(merge_time + transfer_time)
                                     temp_Inputindex = self.graph.layer_tileinfo[layer_id]['Inputindex']
                                     max_prelayer_time = 0
                                     # the maximum time of the required input data (in all input layers)
@@ -1667,6 +2100,10 @@ class Model_latency():
                                     rdata = stride * kernelsize * input_channel_PE * inputbit / 8
                                     temp_tile_latency.update_tile_latency(indata=indata, rdata=rdata)
                                     temp_tile_latency_max=temp_tile_latency.tile_latency
+                                    # if layer_id==5:
+                                    #    print('2')
+                                    #    print(temp_tile_latency.tile_latency)
+                                    #    print(merge_time + transfer_time)
                                     temp_Inputindex = self.graph.layer_tileinfo[layer_id]['Inputindex']
                                     max_prelayer_time = 0
                                     # the maximum time of the required input data (in all input layers)
@@ -1702,6 +2139,9 @@ class Model_latency():
                                             compute_time = max(temp_tile_latency_max, merge_time + transfer_time) + begin_time
                                         else :
                                             compute_time = temp_tile_latency_max + merge_time + transfer_time + begin_time
+                                    # if layer_id==5:
+                                    #    print(temp_tile_latency.tile_latency)
+                                    #    print(merge_time + transfer_time)
                                     self.pipe_result_update(layer_type='conv', begin_time=begin_time, compute_time=compute_time, layer_id=layer_id,
                                                             temp_tile_latency=temp_tile_latency, merge_time=merge_time, transfer_time=transfer_time)
                                     max_time[m] = compute_time
@@ -1851,13 +2291,14 @@ class Model_latency():
                             
                         # Todo: update merge time (adder tree) and transfer data volume
                         if self.Booksim_Flag == 0 :
-                            transfer_time = self.graph.transLayer_distance[0][layer_id] * (outputchannel * outputbit / self.inter_tile_bandwidth)
+                            transfer_time = self.graph.transLayer_distance[0][layer_id] * (output_size * outputbit / self.inter_tile_bandwidth)
                         else :
-                            transfer_time = self.graph.transLayer_distance[0][layer_id] * (outputchannel * outputbit / self.inter_tile_bandwidth) + (self.Trans_Latency[layer_id] ) *  1000 / self.freq
+                            transfer_time = self.graph.transLayer_distance[0][layer_id] * (output_size * outputbit / self.inter_tile_bandwidth) + (self.Trans_Latency[layer_id] ) *  1000 / self.freq
 
                         temp_Inputindex = self.graph.layer_tileinfo[layer_id]['Inputindex']
                         max_prelayer_time = 0
                         #fc: no_pipeline
+
                         for idx in temp_Inputindex:
                             tmp_time = self.finish_time[layer_id+idx][-1]
                             if tmp_time > max_prelayer_time:
@@ -1876,6 +2317,176 @@ class Model_latency():
                         
                         self.pipe_result_update(layer_type='fc', begin_time=begin_time, compute_time=compute_time, layer_id=layer_id,
                                                 temp_tile_latency=temp_tile_latency, merge_time=merge_time, transfer_time=transfer_time, output_size=output_size)
+                    if layer_dict['type'] == 'MM1':
+                        output_size = int(layer_dict['Outfeature'])
+                        input_size = int(layer_dict['Infeature'])
+                        self.layer_split.append([input_size])
+                        inputbit = int(layer_dict['Inputbit'])
+                        outputbit = int(layer_dict['outputbit'])
+                        input_size1 = layer_dict['input1_size']
+                        token_num = int(input_size1[0])
+                        self.layer_latency_initial()
+                        indata = self.graph.layer_tileinfo[layer_id]['max_row'] * inputbit / 8 * token_num
+                        rdata = indata
+                        if mix_mode==1:
+                            temp_tile_latency = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
+                                                                    read_row=self.graph.layer_tileinfo[layer_id]['max_row'],
+                                                                    read_column=self.graph.layer_tileinfo[layer_id]['max_column'],
+                                                                    indata=indata, rdata=rdata, inprecision=inputbit,
+                                                                    PE_num=self.graph.layer_tileinfo[layer_id]['max_PE'],
+                                                                    default_inbuf_size=self.graph.max_inbuf_size,
+                                                                    default_outbuf_size=self.graph.max_outbuf_size
+                                                                    )
+                        #linqiushi modified
+                        if mix_mode==2:
+                            temp_device_type=[]
+                            temp_PE_num=[]
+                            temp_xbar_size=[]
+                            temp_pos=[]
+                            for i in range(self.graph.layer_tileinfo[0]['tile_num_mix'][0]):
+                                for j in range(self.graph.layer_tileinfo[0]['tile_num_mix'][1]):
+                                    
+                                    if self.graph.auto_layer_mapping==0:
+                                        if self.graph.layer_tileinfo[0]['layer_mapping_mix'][i][j]=='no':
+                                            pass
+                                        elif int(self.graph.layer_tileinfo[0]['layer_mapping_mix'][i][j])==layer_id:
+                                            
+                                            temp_pos.append([i,j])
+                                            temp_device_type.append(self.graph.layer_tileinfo[0]['device_type_mix'][i][j])
+                                            temp_PE_num.append((self.graph.layer_tileinfo[0]['PE_num_mix'][i][j])**2)
+                                            temp_xbar_size.append(self.graph.layer_tileinfo[0]['xbar_size_mix'][i][j])
+                                    else:
+                                        if self.graph.mapping_result[i][j]==layer_id:
+                                            temp_pos.append([i,j])
+                                            temp_device_type.append(self.graph.layer_tileinfo[0]['device_type_mix'][i][j])
+                                            temp_PE_num.append(self.graph.layer_tileinfo[layer_id]['max_PE'][i][j])
+                                            temp_xbar_size.append(self.graph.layer_tileinfo[0]['xbar_size_mix'][i][j])
+                                        
+                            
+                            temp_tile_latency_max=0
+                            for i in range(len(temp_device_type)):
+                                #max_PE,row,column待覆盖
+                                temp_tile_latency0 = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
+                                                                    read_row=self.graph.layer_tileinfo[layer_id]['max_row_mix'][i],
+                                                                read_column=self.graph.layer_tileinfo[layer_id]['max_column_mix'][i],
+                                                                    indata=indata, rdata=rdata, inprecision=inputbit,
+                                                                    PE_num=temp_PE_num[i],
+                                                                    default_inbuf_size=self.graph.max_inbuf_size,
+                                                                    default_outbuf_size=self.graph.max_outbuf_size,
+                                                                    device_type=temp_device_type[i],
+                                                                    xbar_size=[int(temp_xbar_size[i]),int(temp_xbar_size[i])],
+                                                                    mix_mode=mix_mode
+                                                                    )
+                                if temp_tile_latency0.tile_latency>temp_tile_latency_max:
+                                    temp_tile_latency_max=temp_tile_latency0.tile_latency
+                                    temp_tile_latency = temp_tile_latency0
+                                    
+                        elif mix_mode==3:
+                    
+                            temp_tile_latency_max=0
+                            for i in range(len(self.graph.layer_tileinfo[layer_id]['tile_max_row'])):
+                                
+                                temp_tile_latency = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
+                                                                    read_row=self.graph.layer_tileinfo[layer_id]['tile_max_row'][i],
+                                                                    read_column=self.graph.layer_tileinfo[layer_id]['tile_max_column'][i],
+                                                                    indata=indata, rdata=rdata, inprecision=inputbit,
+                                                                    PE_num=self.graph.layer_tileinfo[layer_id]['max_PE'],
+                                                                    default_inbuf_size=self.graph.max_inbuf_size,
+                                                                    default_outbuf_size=self.graph.max_outbuf_size,
+                                                                    device_type=self.graph.layer_tileinfo[layer_id]['device_type'],
+                                                                    xbar_size=[int(self.graph.layer_tileinfo[layer_id]['xbar_size'][i]),int(self.graph.layer_tileinfo[layer_id]['xbar_size'][i])],
+                                                                    mix_mode=mix_mode
+                                                                    )  
+                                if temp_tile_latency.tile_latency>temp_tile_latency_max:
+                                    temp_tile_latency_max=temp_tile_latency.tile_latency 
+                        elif mix_mode==4:
+                            temp_tile_latency = tile_latency_analysis(SimConfig_path=self.SimConfig_path,
+                                                                read_row=self.graph.layer_tileinfo[layer_id]['max_row'],
+                                                                read_column=self.graph.layer_tileinfo[layer_id]['max_column'],
+                                                                indata=indata, rdata=rdata, inprecision=inputbit,
+                                                                device_type=self.graph.layer_tileinfo[layer_id]['device_type'],
+                                                                PE_num=self.graph.layer_tileinfo[layer_id]['max_PE'],
+                                                                default_inbuf_size=self.graph.max_inbuf_size,
+                                                                default_outbuf_size=self.graph.max_outbuf_size,
+                                                                xbar_size=[int(self.graph.layer_tileinfo[layer_id]['xbar_size']),int(self.graph.layer_tileinfo[layer_id]['xbar_size'])],
+                                                                mix_mode=mix_mode
+                                                                ) 
+                        #assert 0
+                        #linqiushi above
+                        if mix_mode==3:
+                            temp_tile_latency.outbuf.calculate_buf_read_latency(rdata = (self.graph.layer_tileinfo[layer_id]['tile_max_column'][0]*
+                                                                                    outputbit*self.graph.layer_tileinfo[layer_id]['max_PE']/8) * token_num)
+                            temp_tile_latency.tile_buf_rlatency = temp_tile_latency.outbuf.buf_rlatency
+                            if self.Booksim_Flag == 0 :
+                                merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                    (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['tile_max_column'][0] *
+                                    self.graph.layer_tileinfo[layer_id]['max_PE'] * token_num * outputbit / self.inter_tile_bandwidth)
+                            else :
+                                merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                    (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['tile_max_column'][0] *
+                                    self.graph.layer_tileinfo[layer_id]['max_PE'] * token_num * outputbit / self.inter_tile_bandwidth) + self.Merge_Latency[layer_id] *  1000 / self.freq
+
+                        elif mix_mode==2:
+                    
+                            MAX=0
+                            for i in range(len(temp_pos)):
+                                j=temp_pos[i][0]
+                                k=temp_pos[i][1]
+                                if MAX<self.graph.layer_tileinfo[layer_id]['max_column_mix'][i]*self.graph.layer_tileinfo[layer_id]['max_PE'][j][k]:
+                                    MAX=self.graph.layer_tileinfo[layer_id]['max_column_mix'][i]*self.graph.layer_tileinfo[layer_id]['max_PE'][j][k] * token_num
+                            temp_tile_latency.outbuf.calculate_buf_read_latency(rdata = (MAX*outputbit/8))
+                            temp_tile_latency.tile_buf_rlatency = temp_tile_latency.outbuf.buf_rlatency
+                            if self.Booksim_Flag == 0 :
+                                merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                        (temp_tile_latency.digital_period +MAX * outputbit / self.inter_tile_bandwidth)
+                            else :
+                                merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                        (temp_tile_latency.digital_period +MAX * outputbit / self.inter_tile_bandwidth) + self.Merge_Latency[layer_id] *  1000 / self.freq
+
+                            
+                        elif mix_mode==1 or mix_mode==4:
+                            temp_tile_latency.outbuf.calculate_buf_read_latency(rdata = (self.graph.layer_tileinfo[layer_id]['max_column']*
+                                                                                        outputbit*self.graph.layer_tileinfo[layer_id]['max_PE']/8) * token_num)
+                            temp_tile_latency.tile_buf_rlatency = temp_tile_latency.outbuf.buf_rlatency
+                            if self.Booksim_Flag == 0 :
+                                merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                            (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['max_column'] *
+                                            self.graph.layer_tileinfo[layer_id]['max_PE'] * token_num * outputbit / self.inter_tile_bandwidth)
+                            else :
+                                merge_time = temp_tile_latency.tile_buf_rlatency+self.graph.inLayer_distance[0][layer_id] * \
+                                            (temp_tile_latency.digital_period +self.graph.layer_tileinfo[layer_id]['max_column'] *
+                                            self.graph.layer_tileinfo[layer_id]['max_PE'] * token_num * outputbit / self.inter_tile_bandwidth) + self.Merge_Latency[layer_id] *  1000 / self.freq
+
+                            
+                        # Todo: update merge time (adder tree) and transfer data volume
+                        if self.Booksim_Flag == 0 :
+                            transfer_time = self.graph.transLayer_distance[0][layer_id] * (output_size * token_num * outputbit / self.inter_tile_bandwidth)
+                        else :
+                            transfer_time = self.graph.transLayer_distance[0][layer_id] * (output_size * token_num * outputbit / self.inter_tile_bandwidth) + (self.Trans_Latency[layer_id] ) *  1000 / self.freq
+
+                        temp_Inputindex = self.graph.layer_tileinfo[layer_id]['Inputindex']
+                        max_prelayer_time = 0
+                        #MM1: no_pipeline
+
+                        for idx in temp_Inputindex:
+                            tmp_time = self.finish_time[layer_id+idx][-1]
+                            if tmp_time > max_prelayer_time:
+                                max_prelayer_time = tmp_time
+                        begin_time = max_prelayer_time
+                        if mix_mode==1 or mix_mode==4:
+                            if self.Pipe_flag == 1 :
+                                compute_time = max(temp_tile_latency.tile_latency, merge_time + transfer_time) + begin_time
+                            else :
+                                compute_time = temp_tile_latency.tile_latency + merge_time + transfer_time + begin_time 
+                        elif mix_mode==2 or mix_mode==3:
+                            if self.Pipe_flag == 1 :
+                                compute_time = max(temp_tile_latency_max, merge_time + transfer_time) + begin_time
+                            else :
+                                compute_time = temp_tile_latency_max + merge_time + transfer_time + begin_time
+                        
+                        self.pipe_result_update(layer_type='MM1', begin_time=begin_time, compute_time=compute_time, layer_id=layer_id,
+                                                temp_tile_latency=temp_tile_latency, merge_time=merge_time, transfer_time=transfer_time, output_size=output_size)
+
                     elif layer_dict['type'] == 'pooling':
                         self.layer_latency_initial()
                         output_size = list(map(int, layer_dict['Outputsize']))
@@ -2156,21 +2767,21 @@ class Model_latency():
         try:
             process = subprocess.Popen([program_path] + args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             stdout, stderr = process.communicate()
-            if stdout:
-                print("程序输出：")
-                print(stdout)
-            if stderr:
-                print("程序错误输出：")
-                print(stderr)
-            if process.returncode != 0:
-                print(f"程序退出状态码：{process.returncode}")
-            else:
-                print("程序成功执行完成。")
+            #if stdout:
+            #    print("程序输出：")
+            #    print(stdout)
+            #if stderr:
+            #    print("程序错误输出：")
+            #    print(stderr)
+            #if process.returncode != 0:
+            #    print(f"程序退出状态码：{process.returncode}")
+            #else:
+            #    print("程序成功执行完成。")
         except FileNotFoundError:
             print(f"未找到程序: {program_path}")
         except Exception as e:
             print(f"执行程序时发生错误: {e}")
-        print("继续执行Python代码...")
+        #print("继续执行Python代码...")
         for line in stdout.splitlines():
             line = line.strip()
             if "Total Area" in line:
@@ -2220,21 +2831,21 @@ class Model_latency():
         try:
             process = subprocess.Popen([program_path] + args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             stdout, stderr = process.communicate()
-            if stdout:
-                print("程序输出：")
-                print(stdout)
-            if stderr:
-                print("程序错误输出：")
-                print(stderr)
-            if process.returncode != 0:
-                print(f"程序退出状态码：{process.returncode}")
-            else:
-                print("程序成功执行完成。")
+            #if stdout:
+            #    print("程序输出：")
+            #    print(stdout)
+            #if stderr:
+            #    print("程序错误输出：")
+            #    print(stderr)
+            #if process.returncode != 0:
+            #    print(f"程序退出状态码：{process.returncode}")
+            #else:
+            #    print("程序成功执行完成。")
         except FileNotFoundError:
             print(f"未找到程序: {program_path}")
         except Exception as e:
             print(f"执行程序时发生错误: {e}")
-        print("继续执行Python代码...")
+        #print("继续执行Python代码...")
         for line in stdout.splitlines():
             line = line.strip()
             if "Total Area" in line:
@@ -2284,21 +2895,21 @@ class Model_latency():
         try:
             process = subprocess.Popen([program_path] + args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             stdout, stderr = process.communicate()
-            if stdout:
-                print("程序输出：")
-                print(stdout)
-            if stderr:
-                print("程序错误输出：")
-                print(stderr)
-            if process.returncode != 0:
-                print(f"程序退出状态码：{process.returncode}")
-            else:
-                print("程序成功执行完成。")
+            #if stdout:
+            #    print("程序输出：")
+            #    print(stdout)
+            #if stderr:
+            #    print("程序错误输出：")
+            #    print(stderr)
+            #if process.returncode != 0:
+            #    print(f"程序退出状态码：{process.returncode}")
+            #else:
+            #    print("程序成功执行完成。")
         except FileNotFoundError:
             print(f"未找到程序: {program_path}")
         except Exception as e:
             print(f"执行程序时发生错误: {e}")
-        print("继续执行Python代码...")
+        #print("继续执行Python代码...")
         for line in stdout.splitlines():
             line = line.strip()
             if "Total Area" in line:
@@ -2334,7 +2945,7 @@ class Model_latency():
     def linelatency_read(self):
         with open('floorplan.txt', 'r') as file:
             layer_num = int(file.readline().strip())
-            area_total = float(file.readline().strip())*1000000
+            area_total = float(file.readline().strip())
             rate = float(file.readline().strip())
             for i in range(layer_num):
                 latency = float(file.readline().strip())
@@ -2349,28 +2960,36 @@ class Model_latency():
     def Floorplan(self):
         with open('area_tile.txt', 'r') as file:
             data = [tuple(map(int, line.split())) for line in file if line.strip()]
+        with open('power_tile.txt', 'r') as file:
+            data1 = [tuple(map(float, line.split())) for line in file if line.strip()]
         area = np.zeros(self.tile_num[0]**2)
+        power = np.zeros(self.tile_num[0]**2)
         tag = np.zeros(self.tile_num[0]**2)
         for row in data:
             area[row[0]*self.tile_num[0]+row[1]] = row[2]
             tag[row[0]*self.tile_num[0]+row[1]] = row[3]
-        if (self.topology == 0):
+        for row in data1:
+            power[int(row[0]*self.tile_num[0]+row[1])] = row[2]
+        if (self.topology == 0 or self.topology == 1):
             topology = 'mesh'
         elif (self.topology == 1):
             topology = 'cmesh'
-            area_io = np.ones(int((self.tile_num[0]/2)**2))
-            tag_io = np.full(int((self.tile_num[0]/2)**2),30)
+            area_io = np.zeros(int((self.tile_num[0]/2)**2))
+            power_io = np.zeros(int((self.tile_num[0]/2)**2))
+            tag_io = np.full(int((self.tile_num[0]/2)**2),92)
             area = np.concatenate((area, area_io))
+            power = np.concatenate((power, power_io))
             tag = np.concatenate((tag, tag_io))
-        Area_enclosing_rectangle, final_hpwl, final_path_lengths = floorplan(grid_size=self.tile_num[0],topology=topology,area=area,tag=tag,layer_num=31)
-        Area_enclosing_rectangle = Area_enclosing_rectangle/1000
-        final_hpwl = final_hpwl/math.sqrt(1000)
+        power = np.where(area != 0, (power), 0)
+        Area_enclosing_rectangle, final_hpwl, final_path_lengths = floorplan(grid_size=self.tile_num[0],topology=topology,area=area,hot=power,tag=tag,layer_num=self.layer_num,spacing_ratio=self.Spacing_ratio)
+        Area_enclosing_rectangle = Area_enclosing_rectangle*100
+        final_hpwl = final_hpwl*10
         for key, value in final_path_lengths.items():
-            value = value/math.sqrt(1000)
+            value = value/100
             value = 7.5*value+35
             value = value/2000
             final_path_lengths[key] = value
-        rate=self.area/Area_enclosing_rectangle/1000000
+        rate=self.area/Area_enclosing_rectangle*100
         layer = []
         Merge_Latency_Line = []
         Trans_Latency_Line = []
@@ -2380,7 +2999,7 @@ class Model_latency():
                 numbers = list(map(int, line.split()))
                 layer.append(numbers)
         layer_num = layer[0][0]
-        if (self.topology == 0):
+        if (self.topology == 0 or self.topology == 1):
             for i in range(layer_num):
                 merge_time_max = 0
                 tranfer_time_max = 0

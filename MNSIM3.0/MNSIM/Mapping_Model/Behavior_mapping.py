@@ -139,7 +139,7 @@ class behavior_mapping(tile):
                 self.output_channel[layer_id] = int(layer_dict['Outputchannel'])
                 self.sliding_times[layer_id] = outputsize
             else:
-                assert layer_type == 'fc', "Layer type must be conv or fc"
+                assert layer_type == 'fc' or layer_type == 'MM' or layer_type == 'MM1' or layer_type == 'MM2', "Layer type must be conv or fc"
                 inputsize = 1
                 outputsize = int(layer_dict['Outfeature'])
                 kernelsize = 1
@@ -377,6 +377,24 @@ class behavior_mapping(tile):
                 print("     |----Output Channel:", layer['Outputchannel'])
                 # print("     |----Operations:", self.operations[i])
             elif layer['type'] == 'fc':
+                print("     |----Input Size:", layer['Infeature'])
+                print("     |----Input Precision:", layer['Inputbit'])
+                print("     |----Weight Precision:", layer['Weightbit'])
+                print("     |----Output Size:", layer['Outfeature'])
+                # print("     |----Operations:", self.operations[i])
+            elif layer['type'] == 'MM':
+                print("     |----Input Size:", layer['Infeature'])
+                print("     |----Input Precision:", layer['Inputbit'])
+                print("     |----Weight Precision:", layer['Weightbit'])
+                print("     |----Output Size:", layer['Outfeature'])
+                # print("     |----Operations:", self.operations[i])
+            elif layer['type'] == 'MM1':
+                print("     |----Input Size:", layer['Infeature'])
+                print("     |----Input Precision:", layer['Inputbit'])
+                print("     |----Weight Precision:", layer['Weightbit'])
+                print("     |----Output Size:", layer['Outfeature'])
+                # print("     |----Operations:", self.operations[i])
+            elif layer['type'] == 'MM2':
                 print("     |----Input Size:", layer['Infeature'])
                 print("     |----Input Precision:", layer['Inputbit'])
                 print("     |----Weight Precision:", layer['Weightbit'])

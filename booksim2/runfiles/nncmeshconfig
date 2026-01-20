@@ -67,7 +67,7 @@ sim_count          = 1;
 
 topology = cmesh;
 
-k  = 7;
+k  = 14;
 n  = 2;
 c  = 4;
 x  = 4;

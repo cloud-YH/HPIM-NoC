@@ -319,7 +319,7 @@ class Nohetergeneous:
             file.write(f"\n")
             file.write(f"c=2\n")
 
-    def generate_new_layer_config(self, layernum, tile_type, PE_num, xbar_size, structure, tile_connection, topology, c):
+    def generate_new_layer_config(self, net, layernum, tile_type, PE_num, xbar_size, structure, tile_connection, topology, c):
         tilenum_layer = [0 for _ in range(layernum)]
         
         for i in range(layernum):
@@ -334,6 +334,11 @@ class Nohetergeneous:
                 PEnum = mx * my
                 tilenum_layer[i] = math.ceil(PEnum / (PE_num**2))
             elif layer_type == 'fc':
+                mx = math.ceil(weight_precision) * math.ceil(int(layer_dict['Outfeature']) / xbar_size)
+                my = math.ceil(int(layer_dict['Infeature']) / xbar_size)
+                PEnum = mx * my
+                tilenum_layer[i] = math.ceil(PEnum / (PE_num**2))
+            elif layer_type == 'MM1':
                 mx = math.ceil(weight_precision) * math.ceil(int(layer_dict['Outfeature']) / xbar_size)
                 my = math.ceil(int(layer_dict['Infeature']) / xbar_size)
                 PEnum = mx * my
@@ -380,12 +385,28 @@ class Nohetergeneous:
                     if mapping_order[i][j] < tilenum_layer[m]:
                         mapping_new[i][j] = m
                         break
-
+        if (net == 'decoder'):
+            for i in range(tilenum):
+                for j in range(tilenum):
+                    #if mapping_new[i][j] in (6,7,8,9,19,20,21,22):
+                    if mapping_new[i][j] in (12, 13, 14, 15, 16, 17, 18, 19, 35, 36, 37, 38, 39, 40, 41, 42, 58, 59, 60, 61, 62, 63, 64, 65, 81, 82, 83, 84, 85, 86, 87, 88):
+                        tile_type_new[i][j] = 'SRAM'
+        if (net == 'MM_bert_tiny'):
+            for i in range(tilenum):
+                for j in range(tilenum):
+                    if mapping_new[i][j] in (6,7,8,9,19,20,21,22):
+                    #if mapping_new[i][j] in (12, 13, 14, 15, 16, 17, 18, 19, 35, 36, 37, 38, 39, 40, 41, 42, 58, 59, 60, 61, 62, 63, 64, 65, 81, 82, 83, 84, 85, 86, 87, 88):
+                        tile_type_new[i][j] = 'SRAM'
+        if (net == 'MM_bert_mini'):
+            for i in range(tilenum):
+                for j in range(tilenum):
+                    if mapping_new[i][j] in (1, 2, 3, 4, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 19, 20, 25, 26, 27, 28, 29, 30, 31, 32, 37, 38, 39, 40, 41, 42, 43, 44):
+                        tile_type_new[i][j] = 'SRAM'
         return tilenum, tile_type_new,  PE_num_new, xbar_size_new, mapping_new
     
     def run(self):
-        net='resnet18'
-        dataset='Imagenet'
+        net='MM_bert_mini'
+        dataset='cifar10'
         home_path = os.getcwd()
         weight_path = os.path.join(home_path, f"{dataset}_{net}_params.pth") 
         SimConfig_path = os.path.join(home_path, "SimConfig.ini") 
@@ -393,9 +414,8 @@ class Nohetergeneous:
         structure_file = __TestInterface.get_structure()
         layer_num = len(structure_file)
         
-        
         tiletype = ['SRAM','NVM']
-        PEnum = [1,2,4]
+        PEnum = [1,2,4,8]
         xbarsize = [128,256,512,1024]
         tileconnetion = [0,1,3] 
         '''
@@ -409,7 +429,7 @@ class Nohetergeneous:
             for m in range(len(PEnum)):
                 for n in range(len(xbarsize)):
                     for k in range(len(tileconnetion)):
-                        self.tilenum,self.tile_type,self.PE_num,self.xbar_size,self.mapping=self.generate_new_layer_config(layer_num,tiletype[j],PEnum[m],xbarsize[n],structure_file,tileconnetion[k],0,2)
+                        self.tilenum,self.tile_type,self.PE_num,self.xbar_size,self.mapping=self.generate_new_layer_config(net,layer_num,tiletype[j],PEnum[m],xbarsize[n],structure_file,tileconnetion[k],0,2)
                         self.tile_connection = tileconnetion[k]
                         self.update_ini_file('./SimConfig.ini',self.tile_connection)
                         self.area, self.power, self.latency = self.HMSIM(self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping)
@@ -460,7 +480,7 @@ class Device:
             df = pd.DataFrame([data])
             df.to_csv(filename, mode='a', index=False, header=not pd.io.common.file_exists(filename))
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 sa = Nohetergeneous()
 sa.run()
 '''

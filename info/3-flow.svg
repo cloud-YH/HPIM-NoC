@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- 由 Microsoft Visio, SVG Export 生成 3-flow.svg 页-1 -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events"
+		width="13.0239in" height="4.32023in" viewBox="0 0 937.72 311.057" xml:space="preserve" color-interpolation-filters="sRGB"
+		class="st23">
+	<style type="text/css">
+	<![CDATA[
+		.st1 {fill:#dbeef3;stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5}
+		.st2 {fill:#000000;font-family:Arial;font-size:1.24999em;font-weight:bold}
+		.st3 {fill:#f2dcda;stroke:#000000;stroke-dasharray:1.5,3;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5}
+		.st4 {fill:#fcebdd;stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5}
+		.st5 {fill:#f9c499;stroke:#000000;stroke-dasharray:1.5,3;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5}
+		.st6 {fill:#ebf1df;stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5}
+		.st7 {fill:#ffffff;stroke:#bf9000;stroke-width:3}
+		.st8 {fill:#000000;font-family:Arial;font-size:1.08334em;font-weight:bold}
+		.st9 {font-size:1em}
+		.st10 {marker-end:url(#mrkr4-24);stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5}
+		.st11 {fill:#000000;fill-opacity:1;stroke:#000000;stroke-opacity:1;stroke-width:0.37313432835821}
+		.st12 {fill:#ffffff;stroke:#000000;stroke-width:1.5}
+		.st13 {fill:none;stroke:none;stroke-width:1.5}
+		.st14 {stroke:#000000;stroke-dasharray:1.5,3;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5}
+		.st15 {fill:#e5b9b5;stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5}
+		.st16 {fill:none;stroke:#000000;stroke-dasharray:1.5,3;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.5}
+		.st17 {fill:#000000;font-family:Arial;font-size:1.16666em;font-weight:bold}
+		.st18 {fill:#ffffff;stroke:#ea700d;stroke-width:3}
+		.st19 {fill:#ffffff;stroke:#538135;stroke-width:3}
+		.st20 {fill:#ffffff;stroke:#2e75b5;stroke-width:3}
+		.st21 {fill:#ea700d;stroke:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.24}
+		.st22 {fill:#789440;stroke:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.24}
+		.st23 {fill:none;fill-rule:evenodd;font-size:12px;overflow:visible;stroke-linecap:square;stroke-miterlimit:3}
+	]]>
+	</style>
+
+	<defs id="Markers">
+		<g id="lend4">
+			<path d="M 2 1 L 0 0 L 2 -1 L 2 1 " style="stroke:none"/>
+		</g>
+		<marker id="mrkr4-24" class="st11" refX="-5.36" orient="auto" markerUnits="strokeWidth" overflow="visible">
+			<use xlink:href="#lend4" transform="scale(-2.68,-2.68) "/>
+		</marker>
+	</defs>
+	<g>
+		<title>页-1</title>
+		<g id="shape6178-1" transform="translate(288.566,-0.75)">
+			<title>圆角矩形.6178</title>
+			<desc>Chip Simulation</desc>
+			<path d="M15.64 311.06 L287.12 311.06 A15.6388 15.6388 -180 0 0 302.76 295.42 L302.76 96.31 A15.6388 15.6388 -180 0 0
+						 287.12 80.68 L15.64 80.68 A15.6388 15.6388 -180 0 0 -0 96.31 L0 295.42 A15.6388 15.6388 -180 0 0 15.64 311.06
+						 Z" class="st1"/>
+			<text x="94.3" y="98.18" class="st2">Chip Simulation</text>		</g>
+		<g id="shape6100-4" transform="translate(288.728,-231.49)">
+			<title>圆角矩形.6100</title>
+			<desc>Data Interaction</desc>
+			<path d="M17.55 311.06 L285.22 311.06 A17.5453 17.5453 -180 0 0 302.76 293.51 L302.76 249.79 A17.5453 17.5453 -180 0
+						 0 285.22 232.24 L17.55 232.24 A17.5453 17.5453 -180 0 0 -0 249.79 L0 293.51 A17.5453 17.5453 -180 0 0 17.55
+						 311.06 Z" class="st3"/>
+			<text x="94.7" y="249.74" class="st2">Data Interaction</text>		</g>
+		<g id="shape6101-7" transform="translate(592.554,-1.88386)">
+			<title>圆角矩形.6101</title>
+			<desc>NoC Simulation</desc>
+			<path d="M16.03 311.06 L306.84 311.06 A16.0322 16.0322 -180 0 0 322.87 295.02 L322.87 19.68 A16.0322 16.0322 -180 0 0
+						 306.84 3.64 L16.03 3.64 A16.0322 16.0322 -180 0 0 0 19.68 L0 295.02 A16.0322 16.0322 -180 0 0 16.03 311.06
+						 Z" class="st4"/>
+			<text x="105.6" y="21.14" class="st2">NoC Simulation</text>		</g>
+		<g id="shape6102-10" transform="translate(744.968,-24.1713)">
+			<title>圆角矩形.6102</title>
+			<path d="M16.64 311.06 L149.75 311.06 A16.6391 16.6391 -180 0 0 166.39 294.42 L166.39 99.51 A16.6391 16.6391 -180 0 0
+						 149.75 82.87 L16.64 82.87 A16.6391 16.6391 -180 0 0 0 99.51 L0 294.42 A16.6391 16.6391 -180 0 0 16.64 311.06
+						 Z" class="st5"/>
+		</g>
+		<g id="shape6103-12" transform="translate(0.749765,-1.03346)">
+			<title>圆角矩形.6103</title>
+			<desc>Core Simulation</desc>
+			<path d="M14.32 311.06 L272.09 311.06 A14.3201 14.3201 -180 0 0 286.41 296.74 L286.41 17.11 A14.3201 14.3201 -180 0 0
+						 272.09 2.79 L14.32 2.79 A14.3201 14.3201 -180 0 0 0 17.11 L0 296.74 A14.3201 14.3201 -180 0 0 14.32 311.06
+						 Z" class="st6"/>
+			<text x="85.7" y="20.29" class="st2">Core Simulation</text>		</g>
+		<g id="shape6106-15" transform="translate(614.948,-240.396)">
+			<title>数据.6106</title>
+			<desc>NoC parameters</desc>
+			<path d="M-8.69 311.06 L110.45 311.06 L127.83 276.29 L8.69 276.29 L-8.69 311.06 Z" class="st7"/>
+			<text x="46.21" y="289.77" class="st8">NoC <tspan x="24.52" dy="1.2em" class="st9">parameters</tspan></text>		</g>
+		<g id="shape6107-19" transform="translate(667.657,-240.396)">
+			<title>动态连接线.6107</title>
+			<path d="M6.86 311.06 L7.09 319.23" class="st10"/>
+		</g>
+		<g id="shape6112-25" transform="translate(70.9534,-104.506)">
+			<title>动态连接线.6112</title>
+			<path d="M7.09 311.06 L7.09 337.07" class="st10"/>
+		</g>
+		<g id="shape6116-30" transform="translate(612.4,-193.377)">
+			<title>流程.6116</title>
+			<desc>CNN-Specific Scheduling</desc>
+			<rect x="0" y="280.248" width="125.139" height="30.8088" class="st12"/>
+			<text x="21.39" y="291.75" class="st8">CNN-Specific <tspan x="27.54" dy="1.2em" class="st9">Scheduling</tspan></text>		</g>
+		<g id="shape6117-34" transform="translate(612.4,-144.636)">
+			<title>流程.6117</title>
+			<desc>Path Decomposition</desc>
+			<rect x="0" y="280.248" width="125.139" height="30.8088" class="st12"/>
+			<text x="48.48" y="291.75" class="st8">Path <tspan x="15.62" dy="1.2em" class="st9">D</tspan>ecomposition</text>		</g>
+		<g id="shape6118-38" transform="translate(612.4,-97.6934)">
+			<title>流程.6118</title>
+			<desc>Traffic simulation</desc>
+			<rect x="0" y="282.732" width="125.139" height="28.3243" class="st12"/>
+			<text x="8.39" y="300.79" class="st8">Traffic simulation</text>		</g>
+		<g id="shape6120-41" transform="translate(667.883,-193.377)">
+			<title>动态连接线.6120</title>
+			<path d="M7.09 311.06 L7.09 320.95" class="st10"/>
+		</g>
+		<g id="shape6121-46" transform="translate(667.883,-144.636)">
+			<title>动态连接线.6121</title>
+			<path d="M7.09 311.06 L7.09 321.64" class="st10"/>
+		</g>
+		<g id="shape6125-51" transform="translate(761.122,-216.643)">
+			<title>流程.6125</title>
+			<desc>Random Number Generation</desc>
+			<rect x="0" y="279.591" width="119.141" height="31.4655" class="st12"/>
+			<text x="7.21" y="291.42" class="st8">Random Number <tspan x="25.26" dy="1.2em" class="st9">Generation</tspan></text>		</g>
+		<g id="shape6126-55" transform="translate(750.638,-157.7)">
+			<title>判定.6126</title>
+			<desc>If number&#60; injection rate</desc>
+			<path d="M0 285.78 L70.06 260.5 L140.11 285.78 L70.06 311.06 L0 285.78 Z" class="st12"/>
+			<text x="36.65" y="281.88" class="st8">If number&#60;  <tspan x="29.6" dy="1.2em" class="st9">injection rate</tspan></text>		</g>
+		<g id="shape6127-59" transform="translate(798.557,-143.224)">
+			<title>工作表.6127</title>
+			<desc>Y</desc>
+			<rect x="0" y="294.466" width="21.6809" height="16.5909" class="st13"/>
+			<text x="6.51" y="306.66" class="st8">Y</text>		</g>
+		<g id="shape6128-62" transform="translate(883.596,-184.371)">
+			<title>工作表.6128</title>
+			<desc>N</desc>
+			<rect x="0" y="294.466" width="21.6809" height="16.5909" class="st13"/>
+			<text x="6.15" y="306.66" class="st8">N</text>		</g>
+		<g id="shape6129-65" transform="translate(813.606,-219.536)">
+			<title>动态连接线.6129</title>
+			<path d="M7.09 313.95 L7.09 314.3" class="st10"/>
+		</g>
+		<g id="shape6130-70" transform="translate(892.592,-182.978)">
+			<title>动态连接线.6130</title>
+			<path d="M-1.84 311.06 L12.63 311.06 L12.63 261.66 L-4.29 261.66" class="st10"/>
+		</g>
+		<g id="shape6131-75" transform="translate(813.606,-157.881)">
+			<title>动态连接线.6131</title>
+			<path d="M7.09 311.24 L7.09 317.01" class="st10"/>
+		</g>
+		<g id="shape6132-80" transform="translate(761.122,-115.564)">
+			<title>流程.6132</title>
+			<desc>Packet Generation</desc>
+			<rect x="0" y="282.732" width="119.141" height="28.3243" class="st12"/>
+			<text x="2.49" y="300.79" class="st8">Packet Generation</text>		</g>
+		<g id="shape6134-83" transform="translate(813.606,-115.564)">
+			<title>动态连接线.6134</title>
+			<path d="M7.09 311.06 L7.09 320.5" class="st10"/>
+		</g>
+		<g id="shape6135-88" transform="translate(761.122,-69.7566)">
+			<title>流程.6135</title>
+			<desc>Flits Injection</desc>
+			<rect x="0" y="282.732" width="119.141" height="28.3243" class="st12"/>
+			<text x="17.68" y="300.79" class="st8">Flits Injection</text>		</g>
+		<g id="shape6137-91" transform="translate(427.168,164.385) rotate(-86.1927)">
+			<title>工作表.6137</title>
+			<path d="M0 311.06 L111.67 311.06" class="st14"/>
+		</g>
+		<g id="shape6138-94" transform="translate(1046.38,176.304) rotate(83.1574)">
+			<title>工作表.6138</title>
+			<path d="M0 311.06 L62.24 311.06" class="st14"/>
+		</g>
+		<g id="shape6139-97" transform="translate(612.4,-51.9448)">
+			<title>流程.6139</title>
+			<desc>Power/Area Modeling</desc>
+			<rect x="0" y="277.075" width="125.139" height="33.9818" class="st12"/>
+			<text x="26.8" y="290.17" class="st8">Power/Area <tspan x="34.05" dy="1.2em" class="st9">Modeling</tspan></text>		</g>
+		<g id="shape6142-101" transform="translate(667.883,-98.8966)">
+			<title>动态连接线.6142</title>
+			<path d="M7.09 312.26 L7.09 315.99" class="st10"/>
+		</g>
+		<g id="shape6148-106" transform="translate(159.995,-181.058)">
+			<title>流程.6148</title>
+			<desc>Workload Splitting</desc>
+			<rect x="0" y="278.477" width="95.0632" height="32.5799" class="st12"/>
+			<text x="17.92" y="290.87" class="st8">Workload <tspan x="21.54" dy="1.2em" class="st9">Splitting</tspan></text>		</g>
+		<g id="shape6149-110" transform="translate(20.3485,-240.528)">
+			<title>数据.6149</title>
+			<desc>PIM Parameters</desc>
+			<path d="M-8.63 311.06 L106.76 311.06 L124.01 276.56 L8.63 276.56 L-8.63 311.06 Z" class="st7"/>
+			<text x="46.14" y="289.91" class="st8">PIM <tspan x="22.28" dy="1.2em" class="st9">P</tspan>arameters</text>		</g>
+		<g id="shape6151-114" transform="translate(387.536,-263.694)">
+			<title>剪去单角的矩形.6151</title>
+			<desc>Mapping Order</desc>
+			<path d="M0 311.06 L105.15 311.06 L105.15 296.34 L94.63 285.83 L0 285.83 L0 311.06 Z" class="st15"/>
+			<text x="6.35" y="302.34" class="st8">Mapping Order</text>		</g>
+		<g id="shape6152-117" transform="translate(387.536,-236.026)">
+			<title>剪去单角的矩形.6152</title>
+			<desc>Injection Rate</desc>
+			<path d="M0 311.06 L105.15 311.06 L105.15 296.34 L94.63 285.83 L0 285.83 L0 311.06 Z" class="st15"/>
+			<text x="9.95" y="302.34" class="st8">Injection Rate</text>		</g>
+		<g id="shape6153-120" transform="translate(492.682,-276.307)">
+			<title>动态连接线.6153</title>
+			<path d="M0 311.06 L108.45 311.06 L108.45 378.58 L111.68 378.58" class="st10"/>
+		</g>
+		<g id="shape6154-125" transform="translate(492.682,-248.639)">
+			<title>动态连接线.6154</title>
+			<path d="M0 311.06 L104.48 311.06 L104.48 399.66 L111.68 399.66" class="st10"/>
+		</g>
+		<g id="shape6155-130" transform="translate(200.44,-60.0468)">
+			<title>动态连接线.6155</title>
+			<path d="M7.09 311.06 L7.09 324.28" class="st10"/>
+		</g>
+		<g id="shape6156-135" transform="translate(159.995,-123.609)">
+			<title>流程.6156</title>
+			<desc>Mapping</desc>
+			<rect x="0" y="285.33" width="95.0632" height="25.7271" class="st12"/>
+			<text x="20.81" y="302.09" class="st8">Mapping</text>		</g>
+		<g id="shape6157-138" transform="translate(159.995,-60.0468)">
+			<title>流程.6157</title>
+			<desc>Data Transfer Calculation</desc>
+			<rect x="0" y="277.552" width="95.0632" height="33.5052" class="st12"/>
+			<text x="5.63" y="290.4" class="st8">Data Transfer <tspan x="12.5" dy="1.2em" class="st9">Calculation</tspan></text>		</g>
+		<g id="shape6158-142" transform="translate(200.44,-181.058)">
+			<title>动态连接线.6158</title>
+			<path d="M7.09 311.06 L7.09 334.74" class="st10"/>
+		</g>
+		<g id="shape6159-147" transform="translate(200.44,-123.609)">
+			<title>动态连接线.6159</title>
+			<path d="M7.09 311.06 L7.09 333.07" class="st10"/>
+		</g>
+		<g id="shape6160-152" transform="translate(255.059,-136.473)">
+			<title>动态连接线.6160</title>
+			<path d="M0 311.06 L22.64 311.06 L22.64 171.22 L124.44 171.22" class="st10"/>
+		</g>
+		<g id="shape6163-157" transform="translate(9.43081,-104.506)">
+			<title>流程.6163</title>
+			<desc>Heterogeneous Power/Area Modeling</desc>
+			<rect x="0" y="276.29" width="137.218" height="34.7664" class="st12"/>
+			<text x="21.29" y="289.77" class="st8">Heterogeneous  <tspan x="2.51" dy="1.2em" class="st9">Power/Area Modeling</tspan></text>		</g>
+		<g id="shape6164-161" transform="translate(70.9534,-240.528)">
+			<title>动态连接线.6164</title>
+			<path d="M7.09 311.06 L7.09 328.81" class="st10"/>
+		</g>
+		<g id="shape6167-166" transform="translate(9.43081,-179.965)">
+			<title>流程.6167</title>
+			<desc>Heterogeneous Core Generation</desc>
+			<rect x="0" y="276.29" width="137.218" height="34.7664" class="st12"/>
+			<text x="2.87" y="289.77" class="st8">Heterogeneous  Core <tspan x="34.3" dy="1.2em" class="st9">Generation</tspan></text>		</g>
+		<g id="shape6168-170" transform="translate(70.9534,-179.965)">
+			<title>动态连接线.6168</title>
+			<path d="M7.09 311.06 L7.09 343.71" class="st10"/>
+		</g>
+		<g id="shape6169-175" transform="translate(146.236,-190.261)">
+			<title>动态连接线.6169</title>
+			<path d="M0.41 303.97 L5.72 303.97" class="st10"/>
+		</g>
+		<g id="shape6170-180" transform="translate(149.835,-240.528)">
+			<title>数据.6170</title>
+			<desc>CNN Parameters</desc>
+			<path d="M-8.63 311.06 L106.76 311.06 L124.01 276.56 L8.63 276.56 L-8.63 311.06 Z" class="st7"/>
+			<text x="43.61" y="289.91" class="st8">CNN <tspan x="22.28" dy="1.2em" class="st9">P</tspan>arameters</text>		</g>
+		<g id="shape6171-184" transform="translate(200.44,-240.528)">
+			<title>动态连接线.6171</title>
+			<path d="M7.09 311.06 L7.09 329.91" class="st10"/>
+		</g>
+		<g id="shape6177-189" transform="translate(255.059,-76.7994)">
+			<title>动态连接线.6177</title>
+			<path d="M0 311.06 L25.75 311.06 L25.75 139.22 L124.44 139.22" class="st10"/>
+		</g>
+		<g id="shape6183-194" transform="translate(302.939,-108.373)">
+			<title>工作表.6183</title>
+			<desc>Latency</desc>
+			<path d="M0 311.06 L136.06 311.06 L136.06 214.38 L0 214.38 L0 311.06 Z" class="st16"/>
+			<text x="41.58" y="230.98" class="st17">Latency</text>		</g>
+		<g id="shape6184-197" transform="translate(443.116,-108.555)">
+			<title>工作表.6184</title>
+			<desc>Power</desc>
+			<path d="M0 311.06 L136.06 311.06 L136.06 214.38 L0 214.38 L0 311.06 Z" class="st16"/>
+			<text x="47.03" y="230.98" class="st17">Power</text>		</g>
+		<g id="shape6189-200" transform="translate(302.939,-8.26181)">
+			<title>工作表.6189</title>
+			<desc>Area</desc>
+			<path d="M0 311.06 L136.06 311.06 L136.06 214.38 L0 214.38 L0 311.06 Z" class="st16"/>
+			<text x="52.47" y="230.98" class="st17">Area</text>		</g>
+		<g id="shape6190-203" transform="translate(443.116,-8.44374)">
+			<title>工作表.6190</title>
+			<desc>Temperature</desc>
+			<path d="M0 311.06 L136.06 311.06 L136.06 214.38 L0 214.38 L0 311.06 Z" class="st16"/>
+			<text x="25.63" y="230.98" class="st17">Temperature</text>		</g>
+		<g id="shape6191-206" transform="translate(761.122,-29.0797)">
+			<title>数据.6191</title>
+			<desc>Path Latency</desc>
+			<path d="M-5.49 311.06 L113.65 311.06 L124.63 289.09 L5.49 289.09 L-5.49 311.06 Z" class="st18"/>
+			<text x="19.01" y="303.98" class="st8">Path Latency</text>		</g>
+		<g id="shape6192-209" transform="translate(813.606,-69.7566)">
+			<title>动态连接线.6192</title>
+			<path d="M7.09 311.06 L7.09 321.73" class="st10"/>
+		</g>
+		<g id="shape6195-214" transform="translate(154.806,-17.7061)">
+			<title>数据.6195</title>
+			<desc>Core Latency</desc>
+			<path d="M-5.27 311.06 L100.17 311.06 L110.71 289.98 L5.27 289.98 L-5.27 311.06 Z" class="st19"/>
+			<text x="11.33" y="304.42" class="st8">Core Latency</text>		</g>
+		<g id="shape6197-217" transform="translate(18.4694,-40.8103)">
+			<title>数据.6197</title>
+			<desc>Core Power/Area</desc>
+			<path d="M-7.41 311.06 L111.73 311.06 L126.55 281.42 L7.41 281.42 L-7.41 311.06 Z" class="st19"/>
+			<text x="44.76" y="292.34" class="st8">Core <tspan x="23.8" dy="1.2em" class="st9">Power/Area</tspan></text>		</g>
+		<g id="shape6199-221" transform="translate(615.399,-10.4044)">
+			<title>数据.6199</title>
+			<desc>NoC Power/Area</desc>
+			<path d="M-7.41 311.06 L111.73 311.06 L126.55 281.42 L7.41 281.42 L-7.41 311.06 Z" class="st18"/>
+			<text x="46.21" y="292.34" class="st8">NoC <tspan x="23.8" dy="1.2em" class="st9">Power/Area</tspan></text>		</g>
+		<g id="shape6200-225" transform="translate(667.883,-53.0811)">
+			<title>动态连接线.6200</title>
+			<path d="M7.09 312.19 L7.09 316.05" class="st10"/>
+		</g>
+		<g id="shape6201-230" transform="translate(323.439,-149.293)">
+			<title>流程.6201</title>
+			<desc>Latency Co-Simulation</desc>
+			<rect x="0" y="277.992" width="95.0632" height="33.065" class="st12"/>
+			<text x="22.97" y="290.62" class="st8">Latency <tspan x="3.48" dy="1.2em" class="st9">Co</tspan>-Simulation</text>		</g>
+		<g id="shape6202-234" transform="translate(320.672,-115.307)">
+			<title>数据.6202</title>
+			<desc>Chip Latency</desc>
+			<path d="M-5.27 311.06 L95.33 311.06 L105.87 289.98 L5.27 289.98 L-5.27 311.06 Z" class="st20"/>
+			<text x="9.29" y="304.42" class="st8">Chip Latency</text>		</g>
+		<g id="shape6203-237" transform="translate(363.884,-149.927)">
+			<title>动态连接线.6203</title>
+			<path d="M7.09 311.69 L7.09 316.56" class="st10"/>
+		</g>
+		<g id="shape6204-242" transform="translate(462.108,-53.7078)">
+			<title>流程.6204</title>
+			<desc>Thermal Simulation</desc>
+			<rect x="0" y="280.56" width="98.0787" height="30.497" class="st12"/>
+			<text x="23.75" y="291.91" class="st8">Thermal <tspan x="15.82" dy="1.2em" class="st9">Simulation</tspan></text>		</g>
+		<g id="shape6205-246" transform="translate(316.837,-52.4238)">
+			<title>流程.6205</title>
+			<desc>Chip Placement</desc>
+			<rect x="0" y="277.992" width="108.267" height="33.065" class="st12"/>
+			<text x="5.37" y="298.42" class="st8">Chip Placement</text>		</g>
+		<g id="shape6206-249" transform="translate(460.85,-11.4049)">
+			<title>数据.6206</title>
+			<desc>Chip Temperature</desc>
+			<path d="M-7.82 311.06 L92.77 311.06 L108.42 279.76 L7.82 279.76 L-7.82 311.06 Z" class="st20"/>
+			<text x="35.66" y="291.51" class="st8">Chip <tspan x="10.73" dy="1.2em" class="st9">Temperature</tspan></text>		</g>
+		<g id="shape6207-253" transform="translate(320.672,-15.0732)">
+			<title>数据.6207</title>
+			<desc>Chip Area</desc>
+			<path d="M-5.27 311.06 L95.33 311.06 L105.87 289.98 L5.27 289.98 L-5.27 311.06 Z" class="st20"/>
+			<text x="19.4" y="304.42" class="st8">Chip Area</text>		</g>
+		<g id="shape6208-256" transform="translate(463.616,-149.293)">
+			<title>流程.6208</title>
+			<desc>Simple Addition</desc>
+			<rect x="0" y="277.992" width="95.0632" height="33.065" class="st12"/>
+			<text x="26.22" y="290.62" class="st8">Simple <tspan x="21.18" dy="1.2em" class="st9">Addition</tspan></text>		</g>
+		<g id="shape6209-260" transform="translate(460.85,-115.307)">
+			<title>数据.6209</title>
+			<desc>Chip Power</desc>
+			<path d="M-5.27 311.06 L95.33 311.06 L105.87 289.98 L5.27 289.98 L-5.27 311.06 Z" class="st20"/>
+			<text x="14.35" y="304.42" class="st8">Chip Power</text>		</g>
+		<g id="shape6210-263" transform="translate(504.061,-149.927)">
+			<title>动态连接线.6210</title>
+			<path d="M7.09 311.69 L7.09 316.56" class="st10"/>
+		</g>
+		<g id="shape6211-268" transform="translate(363.884,-52.4238)">
+			<title>动态连接线.6211</title>
+			<path d="M7.09 311.06 L7.09 319.29" class="st10"/>
+		</g>
+		<g id="shape6212-273" transform="translate(504.061,-55.2919)">
+			<title>动态连接线.6212</title>
+			<path d="M7.09 312.64 L7.09 315.61" class="st10"/>
+		</g>
+		<g id="shape6213-278" transform="translate(425.104,-61.8697)">
+			<title>动态连接线.6213</title>
+			<path d="M0 303.97 L28.96 303.97" class="st10"/>
+		</g>
+		<g id="shape6215-283" transform="translate(576.776,-106.449)">
+			<title>普通箭头.6215</title>
+			<path d="M0 311.06 L11.34 299.72 L11.34 305.39 L25.68 305.39 L25.68 311.06 L25.68 316.73 L11.34 316.73 L11.34 322.4 L0
+						 311.06 Z" class="st21"/>
+		</g>
+		<g id="shape6216-285" transform="translate(301.406,-106.449) scale(-1,1)">
+			<title>普通箭头.6216</title>
+			<path d="M0 311.06 L11.34 299.72 L11.34 305.39 L25.68 305.39 L25.68 311.06 L25.68 316.73 L11.34 316.73 L11.34 322.4 L0
+						 311.06 Z" class="st22"/>
+		</g>
+	</g>
+</svg>

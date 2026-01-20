@@ -23,14 +23,14 @@ from MNSIM.mixing.mixtile import mixtile
 from IPython import embed
 
 def main():
-    os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
     start_time = time.time()
     home_path = os.getcwd()
     # print(home_path)
     SimConfig_path = os.path.join(home_path, "SimConfig.ini")
     #linqiushi modified
     mix_tile_path=os.path.join(home_path,"mix_tileinfo.ini")
-    weights_file_path = os.path.join(home_path, "cifar10_resnet18_params.pth")
+    weights_file_path = os.path.join(home_path, "cifar10_MM_bert_mini_params.pth")
     # print(SimConfig_path)
     parser = argparse.ArgumentParser(description='MNSIM example')
     parser.add_argument("-AutoDelete", "--file_auto_delete", default=True,
@@ -41,8 +41,8 @@ def main():
         help="NN model weights file location & name, default:/MNSIM_Python/cifar10_vgg8_params.pth")
     parser.add_argument("-Dataset", "--dataset", default='cifar10',
         help="Dataset description (name), default: cifar10")
-    parser.add_argument("-NN", "--NN", default='resnet18',
-        help="NN model description (name), default: vgg8")
+    parser.add_argument("-NN", "--NN", default='MM_bert_mini',
+        help="NN model description (name), default: alexnet")
     parser.add_argument("-DisHW", "--disable_hardware_modeling", action='store_true', default=False,
         help="Disable hardware modeling, default: false")
     parser.add_argument("-DisAccu", "--disable_accuracy_simulation", action='store_true', default=False,
@@ -125,6 +125,15 @@ def main():
         
         print("========================Area Results=================================")
         area_MNSIM=__area.model_area_output(not (args.disable_module_output), not (args.disable_layer_output))
+        
+        __power = Model_inference_power(NetStruct=structure_file, SimConfig_path=args.hardware_description,
+                                        TCG_mapping=TCG_mapping,mix_mode=args.mix_mode)
+        print("========================Power Results=================================")
+        if TCG_mapping.rewrite_mode==2:
+            __power.model_power_output_rewrite(not (args.disable_module_output), not (args.disable_layer_output))
+        else:
+            __power.model_power_output(not (args.disable_module_output), not (args.disable_layer_output))
+        
         __latency = Model_latency(NetStruct=structure_file, SimConfig_path=args.hardware_description, TCG_mapping=TCG_mapping,mix_mode=args.mix_mode,mix_tile=mix_tile,area_MNSIM=area_MNSIM)
         if not (args.disable_inner_pipeline):
             if TCG_mapping.rewrite_mode==2:
@@ -144,13 +153,7 @@ def main():
         else:
             __latency.model_latency_output(not (args.disable_module_output), not (args.disable_layer_output))
         
-        __power = Model_inference_power(NetStruct=structure_file, SimConfig_path=args.hardware_description,
-                                        TCG_mapping=TCG_mapping,mix_mode=args.mix_mode)
-        print("========================Power Results=================================")
-        if TCG_mapping.rewrite_mode==2:
-            __power.model_power_output_rewrite(not (args.disable_module_output), not (args.disable_layer_output))
-        else:
-            __power.model_power_output(not (args.disable_module_output), not (args.disable_layer_output))
+        
         __energy = Model_energy(NetStruct=structure_file, SimConfig_path=args.hardware_description,
                                 TCG_mapping=TCG_mapping,
                                 model_latency=__latency, model_power=__power)

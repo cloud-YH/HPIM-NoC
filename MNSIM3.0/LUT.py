@@ -30,7 +30,7 @@ def make_LUT():
     l_device_type=['NVM','SRAM']
     l_xbar_size=[32,64,128,256,512,1024]
     l_PE_num=[1,2,4,8,16,32]
-    l_layer_type=['conv','fc','pooling','element_sum']
+    l_layer_type=['MM1','conv','fc','pooling','element_sum']
     count=0
     for i in range(len(l_device_type)):
         for j in range(len(l_xbar_size)):

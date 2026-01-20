@@ -335,7 +335,7 @@ class tile(ProcessElement):
 			self.tile_pooling.calculate_Pooling_power()
 			self.tile_pooling_read_power = self.tile_pooling.Pooling_power
 		
-		elif layer_type == 'conv' or layer_type  == 'fc':
+		elif layer_type == 'conv' or layer_type  == 'fc' or layer_type  == 'MM' or layer_type  == 'MM1' or layer_type  == 'MM2':
 			
 			self.calculate_PE_read_power_fast(max_column=max_column, max_row=max_row, max_group=max_group,
 											  SimConfig_path=SimConfig_path, default_inbuf_size = default_inbuf_size,mix_mode=mix_mode,
@@ -396,7 +396,7 @@ class tile(ProcessElement):
 			self.tile_pooling.calculate_Pooling_power()
 			self.tile_pooling_read_power = self.tile_pooling.Pooling_power
 		
-		elif layer_type == 'conv' or layer_type  == 'fc':
+		elif layer_type == 'conv' or layer_type  == 'fc' or layer_type  == 'MM' or layer_type  == 'MM1' or layer_type  == 'MM2':
 			
 			self.calculate_PE_read_power_fast_part(max_column=max_column, max_row=max_row, max_group=max_group,
 											  SimConfig_path=SimConfig_path, mix_mode=mix_mode,

@@ -217,6 +217,25 @@ def generate_zigzag_matrix_cmesh(row, column, c=2):
         start += 1
     return matrix,pos
 
-matrix, pos = generate_normal_matrix_cmesh(8,8,2)
+def generate_dynamic_matrix(row, column):
+    file_name = 'mapping_order.txt'
+    pos=np.zeros([row*column,2])
+    tile = 0
+    data = []
+    with open(file_name, 'r') as file:
+        for line in file:
+            row_data = [int(num) for num in line.split()]
+            for num in row_data:
+                pos[num][0]=tile//column
+                pos[num][1]=tile%column
+                tile = tile + 1
+                data.append(num)
+    matrix = np.array(data)
+    matrix = matrix.reshape((row, column))
+    
+    return matrix,pos
+
+
+matrix, pos = generate_dynamic_matrix(5,5)
+print(matrix)
 print(pos)
-#print(pos)

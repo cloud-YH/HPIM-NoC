@@ -6,7 +6,7 @@ import math
 import os
 import copy
 from importlib import import_module
-
+from IPython import embed
 import numpy as np
 import torch
 
@@ -166,19 +166,20 @@ class TrainTestInterface(object):
                 # TODO: current version: each layer contains only one output index
                 raise Exception('duplicate output')
             #if net_structure_info[i]['type'] in ['conv', 'pooling', 'element_sum', 'concat','fc']:
-            if net_structure_info[i]['type'] in ['conv', 'pooling', 'element_sum', 'concat','fc','element_multiply','MM']:
+            if net_structure_info[i]['type'] in ['conv', 'pooling', 'element_sum', 'fc','element_multiply','MM', 'MM1', 'MM2']:
                 absolute_index[i] = absolute_count
                 absolute_count = absolute_count + 1
             else:
-                if not len(net_structure_info[i]['Inputindex']) == 1:
-                    raise Exception('duplicate input index for bn, view, and relu layers')
+                #if not len(net_structure_info[i]['Inputindex']) == 1:
+                #    raise Exception('duplicate input index for bn, view, and relu layers')
                 absolute_index[i] = absolute_index[i + net_structure_info[i]['Inputindex'][0]]
                 if i==0 and net_structure_info[i]['type']=='viewMM':
                     print("hooooo",net_structure_info[i]['Inputindex'][0],absolute_index[0])
         graph = list()
+
         for i in range(len(net_structure_info)):
           
-            if net_structure_info[i]['type'] in ['conv', 'pooling', 'element_sum', 'concat', 'fc','element_multiply','MM']:
+            if net_structure_info[i]['type'] in ['conv', 'pooling', 'element_sum', 'fc','element_multiply','MM', 'MM1', 'MM2']:
                 # layer num, layer type: need to be computed on PIM, e.g., conv, fc, pooling, element_sum
                 layer_num = absolute_index[i]
                 layer_type = net_structure_info[i]['type']
@@ -186,14 +187,25 @@ class TrainTestInterface(object):
                 layer_input = list(map(lambda x: (absolute_index[i + x] if i + x != -1 else -1), net_structure_info[i]['Inputindex']))
                 # get the layer's output index
                 layer_output = list()
+                
                 for tmp_i in range(len(net_structure_info)):
                     #if net_structure_info[tmp_i]['type'] in ['conv', 'pooling', 'element_sum','concat', 'fc']:
-                    if net_structure_info[tmp_i]['type'] in ['conv', 'pooling', 'element_sum','concat', 'fc','element_multiply','MM']:
+                    if net_structure_info[tmp_i]['type'] in ['conv', 'pooling', 'element_sum', 'fc','element_multiply','MM', 'MM1', 'MM2']:
                         tmp_layer_num = absolute_index[tmp_i]
                         tmp_layer_input = list(map(lambda x: (absolute_index[tmp_i + x] if tmp_i + x != -1 else -1), net_structure_info[tmp_i]['Inputindex']))
                         if layer_num in tmp_layer_input:
                             layer_output.append(tmp_layer_num)
+                
                 graph.append((layer_num, layer_type, layer_input, layer_output))
+        for i in range(len(graph)-1, -1, -1):
+            if not graph[i][3]:  # 如果当前项的 graph[i][3] 是空列表
+                # 查找索引大于当前索引且 graph[_][3] 非空的第一个值
+                for j in range(i + 1, len(graph)):
+                    if graph[j][3]:  # 如果找到非空的 graph[j][3]
+                        graph[i] = graph[i][:3] + (graph[j][3],)  # 更新当前项的 graph[i][3]
+                        graph[graph[i][3][0]][2].insert(0, i)
+                        break
+
         # add to net array
         net_array = []
         for layer_num, (layer_bit_weights, layer_structure_info) in enumerate(zip(net_bit_weights, net_structure_info)):
@@ -203,6 +215,7 @@ class TrainTestInterface(object):
             layer_structure_info['Layerindex'] = graph[layer_count][0]
             layer_structure_info['Inputindex'] = list(map(lambda x: x - graph[layer_count][0], graph[layer_count][2]))
             layer_structure_info['Outputindex'] = list(map(lambda x: x - graph[layer_count][0], graph[layer_count][3]))
+            
             # add for element_sum and pooling
             if layer_bit_weights == None:
                 #if layer_structure_info['type'] in ['element_sum', 'pooling']:
@@ -251,6 +264,7 @@ class TrainTestInterface(object):
                             tile_array.append(xbar_array[serial_number])
                 total_array.append((layer_structure_info, tile_array))
             net_array.append(total_array)
+        
         # test index
         # graph = map(lambda x: x[0][0],net_array)
         # graph = list(map(lambda x: f'l: {x["Layerindex"]}, t: {x["type"]}, i: {x["Inputindex"]}, o: {x["Outputindex"]}', graph))

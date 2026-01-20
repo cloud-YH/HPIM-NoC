@@ -37,6 +37,12 @@ def use_LUT(device_type,xbar_size,PE_num,op_type):
         return loaded_array_3d[i][j][k]['tile_power_conv']
     elif op_type=='fc':
         return loaded_array_3d[i][j][k]['tile_power_fc']
+    elif op_type=='MM':
+        return loaded_array_3d[i][j][k]['tile_power_MM']
+    elif op_type=='MM1':
+        return loaded_array_3d[i][j][k]['tile_power_MM1']
+    elif op_type=='MM2':
+        return loaded_array_3d[i][j][k]['tile_power_MM2']
     elif op_type=='pooling':
         return loaded_array_3d[i][j][k]['tile_power_pooling']
     elif op_type=='element_sum':
@@ -624,6 +630,7 @@ class Model_inference_power():
             #elif self.mix_mode==1 or self.mix_mode==2:
             
         tilecount=0  
+        self.every_tile_power=[]
         for layer_id in range(self.total_layer_num):
     
             k=0
@@ -651,7 +658,7 @@ class Model_inference_power():
                         tile_power+=temp_tile_buffer.buf_rpower * 1e-3
                         tile_power+=temp_tile_buffer.buf_wpower * 1e-3
                         
-                        if self.graph.net[layer_id][0][0]['type']=='conv' or self.graph.net[layer_id][0][0]['type']=='fc':
+                        if self.graph.net[layer_id][0][0]['type']=='conv' or self.graph.net[layer_id][0][0]['type']=='fc' or self.graph.net[layer_id][0][0]['type']=='MM' or self.graph.net[layer_id][0][0]['type']=='MM1' or self.graph.net[layer_id][0][0]['type']=='MM2':
                             tile_power+=PE_inbuf.buf_rpower * 1e-3*(self.graph.layer_tileinfo[0]['PE_num_mix'][i][j]**2)
                             tile_power+=PE_inbuf.buf_wpower * 1e-3*(self.graph.layer_tileinfo[0]['PE_num_mix'][i][j]**2)
                         
@@ -660,6 +667,7 @@ class Model_inference_power():
                         flag=0
                 if flag==1: 
                     self.arch_power[layer_id] += tile_power
+                    self.every_tile_power.append([tile_power,i,j,tilecount,layer_id])
                     
         self.arch_total_power = sum(self.arch_power)
         
@@ -696,6 +704,11 @@ class Model_inference_power():
                           +self.global_buf.buf_wpower*1e-3+self.global_buf.buf_rpower*1e-3, "W")
                 else:
                     print("     Hardware power:", self.arch_power[i], "W")
+        if hasattr(self,'every_tile_power'):
+            with open('power_tile.txt', 'w') as file:
+                for a in self.every_tile_power:
+                    file.write(f"{a[1]} {a[2]} {a[0]} {a[4]}\n")
+        
     def model_power_output_rewrite(self, module_information = 1, layer_information = 1):
         rewrite_mode=self.graph.rewrite_mode
         assert rewrite_mode==1 or rewrite_mode==2
