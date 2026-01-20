@@ -2514,20 +2514,19 @@ def SA_run_mapping(network='resnet18', dataset='cifar10', hetro=1, type='hetro',
     sa.HMSIM_SimConfig_self(f'mix_tileinfo_{type}_tile.ini')
 
 def SA_run_decoder_111():
-    area_flag = 0
-    power_flag = 0
+    area_flag = 1
+    power_flag = 1
     latency_flag = 1
     energy_flag = 0
     area_des = 400000000
     power_des = 90
     latency_des = 5000000000
     energy_des = 1000000000
-    network = 'resnet18'
-    dataset = 'Imagenet'
-    SA_run(network=network, dataset=dataset, tiletype='NVM',penum=1, xbarsize=1024, tile_connection=3, topology=0,c=2,hetro=1, type='hetro',T0=100, Tf=10, alpha=0.99, k=1, area_flag=area_flag, power_flag=power_flag, latency_flag=latency_flag, energy_flag=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
-    SA_run_0(network=network, dataset=dataset, tiletype='NVM',penum=1, xbarsize=1024, tile_connection=3, topology=0,c=2,hetro=0, type='nvm',T0=100, Tf=10, alpha=0.99, k=1, area_flag=area_flag, power_flag=power_flag, latency_flag=latency_flag, energy_flag=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
-    SA_run_0(network=network, dataset=dataset, tiletype='SRAM',penum=1, xbarsize=512, tile_connection=3, topology=0,c=2,hetro=0, type='sram',T0=100, Tf=10, alpha=0.99, k=1, area_flag=area_flag, power_flag=power_flag, latency_flag=latency_flag, energy_flag=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
-
+    network = 'MM_bert_mini'
+    dataset = 'cifar10'
+    SA_run(network=network, dataset=dataset, tiletype='SRAM',penum=1, xbarsize=256, tile_connection=1, topology=0,c=2,hetro=1, type='hetro',T0=100, Tf=10, alpha=0.99, k=1, area_flag=area_flag, power_flag=power_flag, latency_flag=latency_flag, energy_flag=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
+    #SA_run_0(network=network, dataset=dataset, tiletype='NVM',penum=1, xbarsize=256, tile_connection=1, topology=0,c=2,hetro=0, type='nvm',T0=100, Tf=10, alpha=0.99, k=1, area_flag=area_flag, power_flag=power_flag, latency_flag=latency_flag, energy_flag=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
+    #SA_run_0(network=network, dataset=dataset, tiletype='SRAM',penum=1, xbarsize=256, tile_connection=1, topology=0,c=2,hetro=0, type='sram',T0=100, Tf=10, alpha=0.99, k=1, area_flag=area_flag, power_flag=power_flag, latency_flag=latency_flag, energy_flag=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 #SA_run_resnet18_111()
