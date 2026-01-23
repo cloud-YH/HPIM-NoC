@@ -367,7 +367,8 @@ def get_net(hardware_config = None, cate = 'lenet', num_classes = 10):
     # add new NN models here (conv/fc is followed by one bn layer automatically):
     #assert cate in ['lenet', 'vgg16', 'vgg8', 'alexnet', 'resnet18']
    
-    assert cate in ['lenet', 'vgg16', 'vgg8', 'vgg8_Imagenet', 'alexnet', 'alexnet_Imagenet', 'resnet18', 'resnet18_Imagenet', 'EfficientNet','Attention_example','decoder','LLaMa-decoder','MM_bert_tiny','MM_bert_mini','resnet50_layer_Imagenet_test']
+    assert cate in ['lenet', 'vgg16', 'vgg8', 'vgg8_Imagenet', 'alexnet', 'alexnet_Imagenet', 'resnet18', 'resnet18_Imagenet', 'EfficientNet','Attention_example','decoder','LLaMa-decoder','MM_bert_tiny','MM_bert_mini','resnet50_layer_Imagenet_test', 
+                    'LLaMa-decoder1B']
 
     if cate.startswith('lenet'):
         layer_config_list.append({'type': 'conv', 'in_channels': 3, 'out_channels': 6, 'kernel_size': 5})
@@ -1536,34 +1537,52 @@ def get_net(hardware_config = None, cate = 'lenet', num_classes = 10):
         layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,256],'features':256,'input_index': [-1]})
         layer_config_list.append({'type':'MM1','input1_size':[512,256],'input2_size':[256,1024],'features':1024,'input_index': [-1]})
         layer_config_list.append({'type':'MM1','input1_size':[512,1024],'input2_size':[1024,256],'features':256,'input_index': [-1]})
-    elif cate.startswith('LLaMa-decoder'):
-        layer_config_list.append({'type':'MM1','input1_size':[2048,4096],'input2_size':[4096,128],'features':128,'input_index': [-1]})
-        for i in range(96):
-            layer_config_list.append({
-                'type': 'MM1','input1_size': [2048, 4096],'input2_size': [4096, 128],'features': 128,'input_index': [-1-i]
-            })
+    
+    # elif cate.startswith('LLaMa-decoder'):
+    #     layer_config_list.append({'type':'MM1','input1_size':[2048,4096],'input2_size':[4096,128],'features':128,'input_index': [-1]})
+    #     for i in range(96):
+    #         layer_config_list.append({
+    #             'type': 'MM1','input1_size': [2048, 4096],'input2_size': [4096, 128],'features': 128,'input_index': [-(i+2)]
+    #         })
+    #     #Q*KT
+    #     for i in range(32):
+    #         layer_config_list.append({
+    #             'type': 'MM1','input1_size': [2048, 128],'input2_size': [128, 2048],'features': 2048,'input_index': [-96]
+    #         })
+    #     for i in range(32):
+    #         layer_config_list.append({
+    #             'type': 'Softmax','input_index': [-32]
+    #         })
+    #     #S*V
+    #     for i in range(32):
+    #         layer_config_list.append({
+    #             'type': 'MM1','input1_size': [2048, 2048],'input2_size': [2048, 128],'features': 128,'input_index': [-32]
+    #         })
+    #     for i in range(31):
+    #         layer_config_list.append({
+    #             'type':'concat','input_index': [-1,-2*(i+1)]
+    #         })
+    #     #the linear after multi-head
+    #     layer_config_list.append({'type':'MM1','input1_size':[2048,4096],'input2_size':[4096,4096],'features':4096,'input_index': [-1]})
+    #     layer_config_list.append({'type':'MM1','input1_size':[2048,4096],'input2_size':[4096,11008],'features':11008,'input_index': [-1]})
+    #     layer_config_list.append({'type':'MM1','input1_size':[2048,11008],'input2_size':[11008,4096],'features':4096,'input_index': [-1]})
+    
+    elif cate.startswith('LLaMa-decoder1B'):
+        layer_config_list.append({'type':'MM1','input1_size':[512,2048],'input2_size':[2048,2048*3],'features':2048*3,'input_index': [-1]})
+
         #Q*KT
-        for i in range(32):
-            layer_config_list.append({
-                'type': 'MM1','input1_size': [2048, 128],'input2_size': [128, 2048],'features': 2048,'input_index': [-96]
-            })
-        for i in range(32):
-            layer_config_list.append({
-                'type': 'Softmax','input_index': [-32]
-            })
+        layer_config_list.append({'type':'MM1','input1_size':[512,2048],'input2_size':[2048,512],'features':512,'input_index': [-1]})
+        
         #S*V
-        for i in range(32):
-            layer_config_list.append({
-                'type': 'MM1','input1_size': [2048, 2048],'input2_size': [2048, 128],'features': 128,'input_index': [-32]
-            })
-        for i in range(31):
-            layer_config_list.append({
-                'type':'concat','input_index': [-1,-2*(i+1)]
-            })
-        #the linear after multi-head
-        layer_config_list.append({'type':'MM1','input1_size':[2048,4096],'input2_size':[4096,4096],'features':4096,'input_index': [-1]})
-        layer_config_list.append({'type':'MM1','input1_size':[2048,4096],'input2_size':[4096,11008],'features':11008,'input_index': [-1]})
-        layer_config_list.append({'type':'MM1','input1_size':[2048,11008],'input2_size':[11008,4096],'features':4096,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,512],'input2_size':[512,2048],'features':2048,'input_index': [-1,-2]})
+
+        layer_config_list.append({'type':'MM1','input1_size':[512,2048],'input2_size':[2048,2048],'features':2048,'input_index': [-1]})
+
+        layer_config_list.append({'type':'MM1','input1_size':[512,2048],'input2_size':[2048,8192],'features':8192,'input_index': [-1]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,2048],'input2_size':[2048,8192],'features':8192,'input_index': [-2]})
+        layer_config_list.append({'type':'MM1','input1_size':[512,8192],'input2_size':[8192,2048],'features':2048,'input_index': [-1, -2]})
+    
+    
     elif cate.startswith('resnet50_layer_Imagenet_test'):
         # block 5
         # (1, 512, 28, 28)
@@ -1592,6 +1611,8 @@ def get_net(hardware_config = None, cate = 'lenet', num_classes = 10):
         input_params = {'activation_scale': 1. / 255., 'activation_bit': 9, 'input_shape': (1, 512, 128)}
     elif cate.startswith('MM_bert_mini'):
         input_params = {'activation_scale': 1. / 255., 'activation_bit': 9, 'input_shape': (1, 512, 256)}
+    elif cate.startswith('LLaMa-decoder1B'):
+        input_params = {'activation_scale': 1. / 255., 'activation_bit': 9, 'input_shape': (1, 512, 2048)}
     elif cate.startswith('LLaMa'):
         input_params = {'activation_scale': 1. / 255., 'activation_bit': 9, 'input_shape': (1, 2048, 4096)}
     else:

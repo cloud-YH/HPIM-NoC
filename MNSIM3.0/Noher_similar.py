@@ -1,72 +1,70 @@
 import csv
-from IPython import embed
-import math
 
-def find_min(area=1, power=1, latency=1, data=None):
-    area_des = 127500000
-    power_des = 20
-    latency_des = 5000000
-    min_sram = 10000
-    min_nvm = 10000
-    index_min_sram = 0
-    index_min_nvm = 0
-    for i in range(len(data)):
-        if i < 36:
-            f=func(data[i][1],data[i][2],data[i][3],area, power, latency)
-            if f>0 and f<min_sram:
-                min_sram = f
-                index_min_sram = i
-        elif i >= 36:
-            f=func(data[i][1],data[i][2],data[i][3],area, power, latency)
-            if f>0 and f<min_nvm:
-                min_nvm = f
-                index_min_nvm = i
-    print(index_min_sram)
-    print(index_min_nvm)
+def get_metrics(row):
+    # Row format: Index, Type, PE, Xbar, Conn, TileNum, Area, Power, Latency, Bandwidth
+    try:
+        area = float(row[6])
+        power = float(row[7])
+        latency = float(row[8])
+        return area, power, latency
+    except (ValueError, IndexError):
+        return None
 
-def func(area=1, power=1, latency=1, a=1, b=1, c=1):
-    area_des = 150000000
-    power_des = 25
-    latency_des = 5000000
-    if (a == 1):
-        area_data = area/area_des
-    else:
-        area_data = 1
-        if (area > area_des):
-            return -1
+def find_best(data, key_func, label):
+    best_val = float('inf')
+    best_row = None
+    best_all_metrics = None
     
-    if (b == 1):
-        power_data = power/power_des
-    else:
-        power_data = 1
-        if (power > power_des):
-            return -1
-        
-    if (c == 1):
-        latency_data = latency/latency_des
-    else:
-        latency_data = 1
-        if (latency > latency_des):
-            return -1
-    return area_data*latency_data*power_data*10000
+    for row in data:
+        metrics = get_metrics(row)
+        if metrics:
+            area, power, latency = metrics
+            val = key_func(area, power, latency)
+            if val < best_val:
+                best_val = val
+                best_row = row
+                best_all_metrics = (area, power, latency)
+    
+    if best_row:
+        print(f"Minimum {label}:")
+        print(f"  Index: {best_row[0]}, Type: {best_row[1]}")
+        print(f"  Configuration: PE={best_row[2]}, Xbar={best_row[3]}, Connection={best_row[4]}")
+        print(f"  Calculated Value: {best_val:.4e}")
+        print(f"  Metrics: Area={best_all_metrics[0]:.4e}, Power={best_all_metrics[1]:.4e}, Latency={best_all_metrics[2]:.4e}")
+        print("-" * 30)
 
-file_name = 'Nohetergeneous.csv'
+file_name = 'Nohetergeneous bak.csv'
+data_sram = []
+data_nvm = []
 
-data = []
+try:
+    with open(file_name, 'r') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            if not row: continue
+            # Check for data rows (skip potential headers if any, though file seems headerless)
+            if len(row) < 9: continue
+            
+            try:
+                # Validate numeric columns
+                float(row[6]) 
+            except ValueError:
+                continue
 
-with open(file_name, 'r') as csvfile:
-    csvreader = csv.reader(csvfile)
-    for row in csvreader:
-        try:
-            record = [float(item) for item in row if item.strip() != '']
-            data.append(record)
-        except ValueError:
-            print(f"无法解析的行：{row}")
+            if row[1] == 'SRAM':
+                data_sram.append(row)
+            elif row[1] == 'NVM':
+                data_nvm.append(row)
 
-find_min(1,0,0,data)
-find_min(0,1,0,data)
-find_min(0,0,1,data)
-find_min(0,1,1,data)
-find_min(1,0,1,data)
-find_min(1,1,0,data)
-find_min(1,1,1,data)
+    print("=== SRAM Analysis ===")
+    find_best(data_sram, lambda a, p, l: l, "Latency")
+    find_best(data_sram, lambda a, p, l: p * l, "Power * Latency")
+    find_best(data_sram, lambda a, p, l: p * l * a, "Power * Latency * Area")
+
+    print("\n=== NVM Analysis ===")
+    find_best(data_nvm, lambda a, p, l: l, "Latency")
+    find_best(data_nvm, lambda a, p, l: p * l, "Power * Latency")
+    find_best(data_nvm, lambda a, p, l: p * l * a, "Power * Latency * Area")
+
+except FileNotFoundError:
+    print(f"Error: File {file_name} not found.")

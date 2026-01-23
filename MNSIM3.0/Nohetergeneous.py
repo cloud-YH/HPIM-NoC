@@ -223,6 +223,7 @@ class Nohetergeneous:
                 power_str = power_str.replace(' W', '')
                 NoC_power = float(power_str)
         if len(area) == 0 or len(power) == 0 or len(latency) == 0:
+            print(f"Simulation failed for config. Stderr: {result.stderr}")
             return 0, 0, 0
         else:
             return area[0]+NoC_area, power[0]+NoC_power, latency[0]
@@ -405,7 +406,7 @@ class Nohetergeneous:
         return tilenum, tile_type_new,  PE_num_new, xbar_size_new, mapping_new
     
     def run(self):
-        net='MM_bert_mini'
+        net='LLaMa-decoder1B'
         dataset='cifar10'
         home_path = os.getcwd()
         weight_path = os.path.join(home_path, f"{dataset}_{net}_params.pth") 
@@ -416,7 +417,7 @@ class Nohetergeneous:
         
         tiletype = ['SRAM','NVM']
         PEnum = [1,2,4,8]
-        xbarsize = [128,256,512,1024]
+        xbarsize = [128,256,512,1024,2048]
         tileconnetion = [0,1,3] 
         '''
         tiletype = ['NVM']
@@ -437,24 +438,32 @@ class Nohetergeneous:
                         self.T = k + n*len(tileconnetion) + m*len(tileconnetion)*len(xbarsize) + j*len(tileconnetion)*len(xbarsize)*len(PEnum)
                         #device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, f=f)
                         #device1.write_to_file("Nohetergeneous.txt.txt")
-                        device = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, f=f)
+                        device = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, f=f,
+                                        tile_num=self.tilenum, tile_type=tiletype[j], pe_num=PEnum[m], xbar_size=xbarsize[n], tile_connection=tileconnetion[k])
                         device.write_to_csv('Nohetergeneous.csv')
-                        print(f"T={self.T}\n")
-                        print(f"area={self.area}um^2\n")
-                        print(f"power={self.power}W\n")
-                        print(f"latency={self.latency}ns\n")
+                        print(f"--- Config {self.T} ---")
+                        print(f"Type: {tiletype[j]}, PE: {PEnum[m]}, Xbar: {xbarsize[n]}, Connect: {tileconnetion[k]}, TileNum: {self.tilenum}")
+                        print(f"area={self.area}um^2")
+                        print(f"power={self.power}W")
+                        print(f"latency={self.latency}ns")
                         print(f"f={f}\n")
         
 
 class Device:
-    def __init__(self, T, area, power, latency, f):
+    def __init__(self, T, area, power, latency, f, tile_num, tile_type, pe_num, xbar_size, tile_connection):
         self.T = T
         self.area = area
         self.power = power
         self.latency = latency
         self.f = f
+        self.tile_num = tile_num
+        self.tile_type = tile_type
+        self.pe_num = pe_num
+        self.xbar_size = xbar_size
+        self.tile_connection = tile_connection
 
     def print_info(self):
+        print(f"Config: Type={self.tile_type}, PE={self.pe_num}, Xbar={self.xbar_size}, Connect={self.tile_connection}, TileNum={self.tile_num}")
         print(f"T={self.T}\n")
         print(f"area={self.area}um^2\n")
         print(f"power={self.power}w\n")
@@ -463,7 +472,7 @@ class Device:
 
     def write_to_file(self, filename):
         with open(filename, "a") as file:  
-            file.write(f"T={self.T}\n")
+            file.write(f"T={self.T}, Type={self.tile_type}, PE={self.pe_num}, Xbar={self.xbar_size}, Connect={self.tile_connection}, TileNum={self.tile_num}\n")
             file.write(f"area={self.area}um^2\n")
             file.write(f"power={self.power}w\n")
             file.write(f"latency={self.latency}ns\n")
@@ -471,11 +480,16 @@ class Device:
             file.write("\n")  
     def write_to_csv(self, filename):
             data = {
-                'Temperature (T)': self.T,
+                'Index (T)': self.T,
+                'Tile Type': self.tile_type,
+                'PE Num': self.pe_num,
+                'Xbar Size': self.xbar_size,
+                'Tile Connection': self.tile_connection,
+                'Tile Num': self.tile_num,
                 'Area (um^2)': self.area,
                 'Power (w)': self.power,
                 'Latency (ns)': self.latency,
-                'Frequency (f)': self.f
+                'Figure of Merit (f)': self.f
             }
             df = pd.DataFrame([data])
             df.to_csv(filename, mode='a', index=False, header=not pd.io.common.file_exists(filename))

@@ -1,0 +1,39 @@
+=== SRAM Analysis ===
+Minimum Latency:
+  Index: 13, Type: SRAM
+  Configuration: PE=1, Xbar=2048, Connection=1
+  Calculated Value: 7.6796e+07
+  Metrics: Area=4.6142e+08, Power=2.5284e+02, Latency=7.6796e+07
+------------------------------
+Minimum Power * Latency:
+  Index: 37, Type: SRAM
+  Configuration: PE=4, Xbar=512, Connection=1
+  Calculated Value: 9.8283e+09
+  Metrics: Area=4.6255e+08, Power=9.3850e+01, Latency=1.0472e+08
+------------------------------
+Minimum Power * Latency * Area:
+  Index: 37, Type: SRAM
+  Configuration: PE=4, Xbar=512, Connection=1
+  Calculated Value: 4.5461e+18
+  Metrics: Area=4.6255e+08, Power=9.3850e+01, Latency=1.0472e+08
+------------------------------
+
+=== NVM Analysis ===
+Minimum Latency:
+  Index: 73, Type: NVM
+  Configuration: PE=1, Xbar=2048, Connection=1
+  Calculated Value: 7.6798e+07
+  Metrics: Area=2.5910e+08, Power=4.8964e+01, Latency=7.6798e+07
+------------------------------
+Minimum Power * Latency:
+  Index: 73, Type: NVM
+  Configuration: PE=1, Xbar=2048, Connection=1
+  Calculated Value: 3.7603e+09
+  Metrics: Area=2.5910e+08, Power=4.8964e+01, Latency=7.6798e+07
+------------------------------
+Minimum Power * Latency * Area:
+  Index: 73, Type: NVM
+  Configuration: PE=1, Xbar=2048, Connection=1
+  Calculated Value: 9.7429e+17
+  Metrics: Area=2.5910e+08, Power=4.8964e+01, Latency=7.6798e+07
+------------------------------

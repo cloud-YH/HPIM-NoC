@@ -20,7 +20,7 @@ def make_LUT():
     # 第一维的大小
     first_dimension_size = 2
     # 第二维的大小
-    second_dimension_size = 6
+    second_dimension_size = 7
     # 第三维的大小
     third_dimension_size = 6
     three_dimensional_array = [[[{'tile_area': i+j+k, 'tile_power_conv': f'value{i}_{j}_{k}','tile_power_fc': f'value{i}_{j}_{k}','tile_power_pooling': 1,'tile_power_element_sum': 1} 
@@ -28,7 +28,7 @@ def make_LUT():
                             for j in range(second_dimension_size)] 
                            for i in range(first_dimension_size)]
     l_device_type=['NVM','SRAM']
-    l_xbar_size=[32,64,128,256,512,1024]
+    l_xbar_size=[32,64,128,256,512,1024,2048]
     l_PE_num=[1,2,4,8,16,32]
     l_layer_type=['MM1','conv','fc','pooling','element_sum']
     count=0

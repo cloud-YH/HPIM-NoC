@@ -125,6 +125,18 @@ def main():
         
         print("========================Area Results=================================")
         area_MNSIM=__area.model_area_output(not (args.disable_module_output), not (args.disable_layer_output))
+        
+        
+        __power = Model_inference_power(NetStruct=structure_file, SimConfig_path=args.hardware_description,
+                                        TCG_mapping=TCG_mapping,mix_mode=args.mix_mode)
+        print("========================Power Results=================================")
+        if TCG_mapping.rewrite_mode==2:
+            __power.model_power_output_rewrite(not (args.disable_module_output), not (args.disable_layer_output))
+        else:
+            __power.model_power_output(not (args.disable_module_output), not (args.disable_layer_output))
+        
+        
+        
         __latency = Model_latency(NetStruct=structure_file, SimConfig_path=args.hardware_description, TCG_mapping=TCG_mapping,mix_mode=args.mix_mode,mix_tile=mix_tile,area_MNSIM=area_MNSIM)
         if not (args.disable_inner_pipeline):
             if TCG_mapping.rewrite_mode==2:
@@ -144,13 +156,7 @@ def main():
         else:
             __latency.model_latency_output(not (args.disable_module_output), not (args.disable_layer_output))
         
-        __power = Model_inference_power(NetStruct=structure_file, SimConfig_path=args.hardware_description,
-                                        TCG_mapping=TCG_mapping,mix_mode=args.mix_mode)
-        print("========================Power Results=================================")
-        if TCG_mapping.rewrite_mode==2:
-            __power.model_power_output_rewrite(not (args.disable_module_output), not (args.disable_layer_output))
-        else:
-            __power.model_power_output(not (args.disable_module_output), not (args.disable_layer_output))
+
         __energy = Model_energy(NetStruct=structure_file, SimConfig_path=args.hardware_description,
                                 TCG_mapping=TCG_mapping,
                                 model_latency=__latency, model_power=__power)

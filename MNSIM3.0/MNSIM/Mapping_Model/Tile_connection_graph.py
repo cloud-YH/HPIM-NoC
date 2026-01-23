@@ -2427,6 +2427,8 @@ class TCG():
                 self.max_inbuf_size = tmp_inbuf_size
             if tmp_outbuf_size > self.max_outbuf_size:
                 self.max_outbuf_size = tmp_outbuf_size
+        
+        
         if self.mix_mode==4 :
             for layer_id in range(self.layer_num):
                 if layer_id!=0:
@@ -2467,6 +2469,8 @@ class TCG():
         self.inLayer_distance = np.zeros([1, self.layer_num])
         self.transLayer_distance = np.zeros([1, self.layer_num])
         self.aggregate_arg = np.zeros([self.layer_num, 2])
+    
+    
     def mapping_in_size(self,net,tile_array,mapping_order):
         print('hi this is mapping_in_size')
         layer_num=len(net)
@@ -2494,9 +2498,6 @@ class TCG():
                 #while(capacity_count<capacity_layer):
                     #读入tile
                     
-                    
-        
-        
 
     def rewrite_mapping(self):
         #the easiest mode: sequential, no copy

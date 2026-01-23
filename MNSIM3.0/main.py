@@ -30,7 +30,11 @@ def main():
     SimConfig_path = os.path.join(home_path, "SimConfig.ini")
     #linqiushi modified
     mix_tile_path=os.path.join(home_path,"mix_tileinfo.ini")
-    weights_file_path = os.path.join(home_path, "cifar10_MM_bert_mini_params.pth")
+    # weights_file_path = os.path.join(home_path, "cifar10_MM_bert_mini_params.pth")
+    # weights_file_path = os.path.join(home_path, "cifar10_alexnet_params.pth")
+    weights_file_path = os.path.join(home_path, "cifar10_LLaMa-decoder1B_params.pth")
+    
+    
     # print(SimConfig_path)
     parser = argparse.ArgumentParser(description='MNSIM example')
     parser.add_argument("-AutoDelete", "--file_auto_delete", default=True,
@@ -41,7 +45,7 @@ def main():
         help="NN model weights file location & name, default:/MNSIM_Python/cifar10_vgg8_params.pth")
     parser.add_argument("-Dataset", "--dataset", default='cifar10',
         help="Dataset description (name), default: cifar10")
-    parser.add_argument("-NN", "--NN", default='MM_bert_mini',
+    parser.add_argument("-NN", "--NN", default='LLaMa-decoder1B',
         help="NN model description (name), default: alexnet")
     parser.add_argument("-DisHW", "--disable_hardware_modeling", action='store_true', default=False,
         help="Disable hardware modeling, default: false")
@@ -106,6 +110,9 @@ def main():
         mix_tile=mixtile(args.mix_tileinfo)
     else:
         mix_tile=None
+        
+    # embed()
+    # exit()
     TCG_mapping = TCG(structure_file, args.hardware_description,mix_mode=args.mix_mode,mix_tile=mix_tile)
 
     # print(TCG_mapping.max_inbuf_size)
@@ -154,12 +161,15 @@ def main():
             __latency.model_latency_output(not (args.disable_module_output), not (args.disable_layer_output))
         
         
-        __energy = Model_energy(NetStruct=structure_file, SimConfig_path=args.hardware_description,
-                                TCG_mapping=TCG_mapping,
-                                model_latency=__latency, model_power=__power)
-        if args.mix_mode!=2 or mix_tile.auto_layer_mapping!=0:
-            print("========================Energy Results=================================")
-            __energy.model_energy_output(not (args.disable_module_output), not (args.disable_layer_output))
+        # __energy = Model_energy(NetStruct=structure_file, SimConfig_path=args.hardware_description,
+        #                         TCG_mapping=TCG_mapping,
+        #                         model_latency=__latency, model_power=__power)
+        # if args.mix_mode!=2 or mix_tile.auto_layer_mapping!=0:
+        #     print("========================Energy Results=================================")
+        #     __energy.model_energy_output(not (args.disable_module_output), not (args.disable_layer_output))
+            
+            
+            
     '''
     if not (args.disable_accuracy_simulation):
         print("======================================")

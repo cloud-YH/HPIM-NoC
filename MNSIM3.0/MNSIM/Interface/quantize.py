@@ -213,93 +213,78 @@ class QuantizeLayer(nn.Module):
         # layer information
         self.layer_info = None
     def structure_forward(self, input):
-        # TRADITION
-        # get the layer structure
-        #linqiushi modified
-
-        if len(input)==1:
+        # 保持原始输入处理逻辑
+        if len(input)==1 or (len(input)==2 and self.layer_config['type']=='MM1'):
+            input = input if len(input) == 1 else input[0]
             input_shape = input.shape
-            if self.layer_config['type']=='conv' or self.layer_config['type']=='fc':
-                input_list = torch.split(input, self.split_input, dim = 1)
-            elif input_shape[2] == 768 and self.layer_config['type']=='MM1':
-                input_list = torch.split(input, 64, dim = 2)
-                input_shape = input_list[0].shape
-            elif input_shape[2] == 384 and self.layer_config['type']=='MM1':
-                input_list = torch.split(input, 64, dim = 2)
-                input_shape = input_list[0].shape
-            elif self.layer_config['type']=='MM' or self.layer_config['type']=='MM1' or self.layer_config['type']=='MM2':
-                input_list = torch.split(input, self.split_input, dim = 2)
-            #print("zhegeyouruhe",self.layer_config['type'],input_shape,input[0].shape,self.split_input,len(input_list),len(self.sublayer_list))
-            output = None
-            for i in range(len(self.sublayer_list)):
-                if i == 0:
-                    output = self.sublayer_list[i](input_list[i])
-
-                else:
-                    output.add_(self.sublayer_list[i](input_list[i]))
-            output_shape = output.shape
-
-            # layer_info
-            # only conv and fc are QuantizeLayer
-            self.layer_info = collections.OrderedDict()
-            # self.layer_info['name'] = self.layer_config['name']
-            if self.layer_config['type'] == 'conv':
-                self.layer_info['type'] = 'conv'
-                self.layer_info['Inputchannel'] = int(input_shape[1])
-                self.layer_info['Inputsize'] = list(input_shape[2:])
-                self.layer_info['Kernelsize'] = self.layer_config['kernel_size']
-                self.layer_info['Stride'] = self.layer_config['stride']
-                self.layer_info['Padding'] = self.layer_config['padding']
-                self.layer_info['Depthwise']=self.layer_config['depthwise']
-                self.layer_info['Outputchannel'] = int(output_shape[1])
-                self.layer_info['Outputsize'] = list(output_shape[2:])
-            elif self.layer_config['type'] == 'fc':
-                self.layer_info['type'] = 'fc'
-                self.layer_info['Infeature'] = int(input_shape[1])
-                self.layer_info['Outfeature'] = int(output_shape[1])
-                self.layer_info['Outputchannel'] = int(output_shape[1])
-                self.layer_info['Outputsize'] = list([1,1])
-            elif self.layer_config['type']== 'MM':
-                self.layer_info['type'] = 'MM'
-                self.layer_info['Infeature']=int(input_shape[1])
-                self.layer_info['Outfeature']=int(output_shape[1])
-                self.layer_info['Inputsize']=int(input_shape[0]*input_shape[1])
-                self.layer_info['Outputsize']=int(output_shape[0]*output_shape[1])
-                self.layer_info['input1_size']=self.layer_config['input1_size']
-                #set the key according to the needs
-            elif self.layer_config['type']== 'MM1':
-                self.layer_info['type'] = 'MM1'
-                self.layer_info['Infeature']=int(input_shape[2])
-                self.layer_info['Outfeature']=int(output_shape[2])
-                self.layer_info['Inputsize']=int(input_shape[1]*input_shape[2])
-                self.layer_info['Outputsize']=int(output_shape[1]*output_shape[2])
-                self.layer_info['input1_size']=self.layer_config['input1_size']
-            elif self.layer_config['type']== 'MM2':
-                self.layer_info['type'] = 'MM2'
-                self.layer_info['Infeature']=int(input_shape[2])
-                self.layer_info['Outfeature']=int(output_shape[2])
-                self.layer_info['Inputsize']=int(input_shape[1]*input_shape[2])
-                self.layer_info['Outputsize']=int(output_shape[1]*output_shape[2])
-                self.layer_info['input1_size']=self.layer_config['input1_size']
-            else:
-                assert 0, f'not support {self.layer_config["type"]}'
-            self.layer_info['Inputbit'] = int(self.bit_scale_list[0,0].item())
-            self.layer_info['Weightbit'] = int(self.quantize_config['weight_bit'])
-            self.layer_info['outputbit'] = int(self.quantize_config['activation_bit'])
-            self.layer_info['row_split_num'] = len(self.sublayer_list)
-            if self.hardware_config['xbar_polarity'] == 2:
-                self.layer_info['weight_bit_split_part'] = math.ceil((self.quantize_config['weight_bit'] - 1) / (self.hardware_config['weight_bit']))
-            else:
-                self.layer_info['weight_bit_split_part'] = math.ceil((self.quantize_config['weight_bit']) / (self.hardware_config['weight_bit']))
-            if 'input_index' in self.layer_config:
             
-                self.layer_info['Inputindex'] = self.layer_config['input_index']
-            else:
-                self.layer_info['Inputindex'] = [-1]
-            self.layer_info['Outputindex'] = [1]
-            return output
+            # 计算输出形状
+            if self.layer_config['type'] == 'conv':
+                H_in, W_in = input_shape[2], input_shape[3]
+                K = self.layer_config['kernel_size']
+                S = self.layer_config['stride']
+                P = self.layer_config.get('padding', 0)
+                H_out = (H_in - K + 2 * P) // S + 1
+                W_out = (W_in - K + 2 * P) // S + 1
+                output_shape = (input_shape[0], self.layer_config['out_channels'], H_out, W_out)
+            elif self.layer_config['type'] == 'fc':
+                output_shape = (input_shape[0], self.layer_config['out_features'])
+            elif self.layer_config['type'] == 'MM1':
+                # MM1特殊处理：输出形状仅由input2_size决定
+                output_shape = (input_shape[0], input_shape[1], self.layer_config['input2_size'][1])
+            
+            # 生成layer_info
+            self.layer_info = collections.OrderedDict()
+            if self.layer_config['type'] == 'conv':
+                self.layer_info.update({
+                    'type': 'conv',
+                    'Inputchannel': int(input_shape[1]),
+                    'Inputsize': list(input_shape[2:]),
+                    'Kernelsize': self.layer_config['kernel_size'],
+                    'Stride': self.layer_config['stride'],
+                    'Padding': self.layer_config.get('padding', 0),
+                    'Depthwise': self.layer_config.get('depthwise', 'normal'),
+                    'Outputchannel': int(output_shape[1]),
+                    'Outputsize': list(output_shape[2:])
+                })
+            elif self.layer_config['type'] == 'fc':
+                self.layer_info.update({
+                    'type': 'fc',
+                    'Infeature': int(input_shape[1]),
+                    'Outfeature': int(output_shape[1]),
+                    'Outputchannel': int(output_shape[1]),
+                    'Outputsize': [1,1]
+                })
+            elif self.layer_config['type'] == 'MM1':
+                # MM1特殊处理：Infeature直接从input2_size获取
+                self.layer_info.update({
+                    'type': 'MM1',
+                    'Infeature': int(self.layer_config['input2_size'][0]),  # 关键修改点
+                    'Outfeature': int(output_shape[2]),
+                    'Inputsize': int(input_shape[1]*self.layer_config['input2_size'][0]),  # 使用input2_size[0]
+                    'Outputsize': int(output_shape[1]*output_shape[2]),
+                    'input1_size': self.layer_config.get('input1_size', None),
+                    'input2_size': self.layer_config['input2_size']
+                })
+            
+            # 添加通用量化信息
+            self.layer_info.update({
+                'Inputbit': int(self.bit_scale_list[0,0].item()),
+                'Weightbit': int(self.quantize_config['weight_bit']),
+                'outputbit': int(self.quantize_config['activation_bit']),
+                'row_split_num': len(self.sublayer_list),
+                'weight_bit_split_part': math.ceil(
+                    (self.quantize_config['weight_bit'] - (1 if self.hardware_config['xbar_polarity'] == 2 else 0)) / 
+                    self.hardware_config['weight_bit']
+                ),
+                'Inputindex': self.layer_config.get('input_index', [-1]),
+                'Outputindex': [1]
+            })
+            
+            return torch.zeros(output_shape, device=input.device)
         elif len(input)==2:
-            assert self.layer_config['type']=='MM' or self.layer_config['type']=='MM1'
+            assert self.layer_config['type']=='MM1' or self.layer_config['type']=='MM'
+            return None
     def forward(self, input, method = 'SINGLE_FIX_TEST', adc_action = 'SCALE'):
         METHOD = method
        

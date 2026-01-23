@@ -1,0 +1,843 @@
+nohup: ignoring input
+run on device cuda:0
+load weights from /home/xiongyunhao/HPIM_NoC/HPIM001/HPIM/MNSIM3.0/cifar10_LLaMa-decoder1B_params.pth
+--- Config 0 ---
+Type: SRAM, PE: 1, Xbar: 128, Connect: 0, TileNum: 184
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 1 ---
+Type: SRAM, PE: 1, Xbar: 128, Connect: 1, TileNum: 184
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 2 ---
+Type: SRAM, PE: 1, Xbar: 128, Connect: 3, TileNum: 184
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 3 ---
+Type: SRAM, PE: 1, Xbar: 256, Connect: 0, TileNum: 92
+area=2725387094.262421um^2
+power=283.6811011284161W
+latency=362005472.00000006ns
+f=279881.20453487954
+
+--- Config 4 ---
+Type: SRAM, PE: 1, Xbar: 256, Connect: 1, TileNum: 92
+area=2725387094.262421um^2
+power=283.6811011284161W
+latency=362359142.40000004ns
+f=280154.64155508106
+
+--- Config 5 ---
+Type: SRAM, PE: 1, Xbar: 256, Connect: 3, TileNum: 92
+area=2725387094.262421um^2
+power=283.6811011284161W
+latency=350739775.59999996ns
+f=271171.2348735473
+
+--- Config 6 ---
+Type: SRAM, PE: 1, Xbar: 512, Connect: 0, TileNum: 46
+area=1135565441.7904606um^2
+power=244.63673983257968W
+latency=192107204.8ns
+f=53367.57889246086
+
+--- Config 7 ---
+Type: SRAM, PE: 1, Xbar: 512, Connect: 1, TileNum: 46
+area=1135565441.7904606um^2
+power=244.63677083257969W
+latency=187388636.80000004ns
+f=52056.762450068294
+
+--- Config 8 ---
+Type: SRAM, PE: 1, Xbar: 512, Connect: 3, TileNum: 46
+area=1135565441.7904606um^2
+power=244.63671683257968W
+latency=194584525.60000002ns
+f=54055.77607410269
+
+--- Config 9 ---
+Type: SRAM, PE: 1, Xbar: 1024, Connect: 0, TileNum: 24
+area=633440274.1721072um^2
+power=241.52307055183402W
+latency=111330056.00000001ns
+f=17032.43425592026
+
+--- Config 10 ---
+Type: SRAM, PE: 1, Xbar: 1024, Connect: 1, TileNum: 24
+area=633440274.1721072um^2
+power=241.52306645183404W
+latency=110504414.4ns
+f=16906.11869723823
+
+--- Config 11 ---
+Type: SRAM, PE: 1, Xbar: 1024, Connect: 3, TileNum: 24
+area=8206877975.53271um^2
+power=906.0738552869587W
+latency=704797437.2ns
+f=5240900.220257681
+
+--- Config 12 ---
+Type: SRAM, PE: 1, Xbar: 2048, Connect: 0, TileNum: 12
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 13 ---
+Type: SRAM, PE: 1, Xbar: 2048, Connect: 1, TileNum: 12
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 14 ---
+Type: SRAM, PE: 1, Xbar: 2048, Connect: 3, TileNum: 12
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 15 ---
+Type: SRAM, PE: 2, Xbar: 128, Connect: 0, TileNum: 92
+area=4809011030.2004um^2
+power=387.99367015792706W
+latency=382502236.0ns
+f=713697.8556608253
+
+--- Config 16 ---
+Type: SRAM, PE: 2, Xbar: 128, Connect: 1, TileNum: 92
+area=4809011030.2004um^2
+power=387.99367015792706W
+latency=382738161.6ns
+f=714138.061178514
+
+--- Config 17 ---
+Type: SRAM, PE: 2, Xbar: 128, Connect: 3, TileNum: 92
+area=4809011030.2004um^2
+power=387.99367015792706W
+latency=376014334.0ns
+f=701592.3009494076
+
+--- Config 18 ---
+Type: SRAM, PE: 2, Xbar: 256, Connect: 0, TileNum: 46
+area=1920260628.959539um^2
+power=277.4800346513419W
+latency=214225604.8ns
+f=114146.6828795602
+
+--- Config 19 ---
+Type: SRAM, PE: 2, Xbar: 256, Connect: 1, TileNum: 46
+area=1920260628.959539um^2
+power=277.4800656513419W
+latency=209035177.60000002ns
+f=111381.05930971357
+
+--- Config 20 ---
+Type: SRAM, PE: 2, Xbar: 256, Connect: 3, TileNum: 46
+area=1920260545.205839um^2
+power=277.1954746513419W
+latency=221657503.20000002ns
+f=117985.52561190294
+
+--- Config 21 ---
+Type: SRAM, PE: 2, Xbar: 512, Connect: 0, TileNum: 23
+area=942878075.0677246um^2
+power=246.0088210180447W
+latency=126105107.2ns
+f=29250.877054705037
+
+--- Config 22 ---
+Type: SRAM, PE: 2, Xbar: 512, Connect: 1, TileNum: 23
+area=942878075.0677246um^2
+power=246.0088253180447W
+latency=126105115.2ns
+f=29250.879421633144
+
+--- Config 23 ---
+Type: SRAM, PE: 2, Xbar: 512, Connect: 3, TileNum: 23
+area=942878075.0677246um^2
+power=246.0088358180447W
+latency=137193814.40000004ns
+f=31822.97472490199
+
+--- Config 24 ---
+Type: SRAM, PE: 2, Xbar: 1024, Connect: 0, TileNum: 12
+area=588236062.6443143um^2
+power=243.5253329626509W
+latency=103337518.8ns
+f=14803.139148032962
+
+--- Config 25 ---
+Type: SRAM, PE: 2, Xbar: 1024, Connect: 1, TileNum: 12
+area=588236062.6443143um^2
+power=243.5253383626509W
+latency=99090828.0ns
+f=14194.799379141545
+
+--- Config 26 ---
+Type: SRAM, PE: 2, Xbar: 1024, Connect: 3, TileNum: 12
+area=588236062.6443143um^2
+power=243.5253625626509W
+latency=104517264.80000001ns
+f=14972.140034227068
+
+--- Config 27 ---
+Type: SRAM, PE: 2, Xbar: 2048, Connect: 0, TileNum: 6
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 28 ---
+Type: SRAM, PE: 2, Xbar: 2048, Connect: 1, TileNum: 6
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 29 ---
+Type: SRAM, PE: 2, Xbar: 2048, Connect: 3, TileNum: 6
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 30 ---
+Type: SRAM, PE: 4, Xbar: 128, Connect: 0, TileNum: 46
+area=3986695898.18435um^2
+power=375.3789220713993W
+latency=258462404.79999998ns
+f=386794.5738680759
+
+--- Config 31 ---
+Type: SRAM, PE: 4, Xbar: 128, Connect: 1, TileNum: 46
+area=3986695898.18435um^2
+power=375.3789530713993W
+latency=252328259.2ns
+f=377614.72361025447
+
+--- Config 32 ---
+Type: SRAM, PE: 4, Xbar: 128, Connect: 3, TileNum: 46
+area=2677154502.08315um^2
+power=401.699461623644W
+latency=350740883.59999996ns
+f=377190.7875195675
+
+--- Config 33 ---
+Type: SRAM, PE: 4, Xbar: 256, Connect: 0, TileNum: 23
+area=1718978928.8801382um^2
+power=275.6452750320759W
+latency=173998816.0ns
+f=82445.58400198972
+
+--- Config 34 ---
+Type: SRAM, PE: 4, Xbar: 256, Connect: 1, TileNum: 23
+area=1008913512.3952616um^2
+power=188.42278118397752W
+latency=194584525.60000002ns
+f=36990.96391115616
+
+--- Config 35 ---
+Type: SRAM, PE: 4, Xbar: 256, Connect: 3, TileNum: 23
+area=462552567.1385071um^2
+power=93.84965096100262W
+latency=111330056.00000001ns
+f=4832.881926438837
+
+--- Config 36 ---
+Type: SRAM, PE: 4, Xbar: 512, Connect: 0, TileNum: 12
+area=462552567.1385071um^2
+power=93.84964686100263W
+latency=110504414.4ns
+f=4797.0402872542445
+
+--- Config 37 ---
+Type: SRAM, PE: 4, Xbar: 512, Connect: 1, TileNum: 12
+area=462552567.1385071um^2
+power=93.84966176100262W
+latency=104724103.2ns
+f=4546.115416135433
+
+--- Config 38 ---
+Type: SRAM, PE: 4, Xbar: 512, Connect: 3, TileNum: 12
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 39 ---
+Type: SRAM, PE: 4, Xbar: 1024, Connect: 0, TileNum: 6
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 40 ---
+Type: SRAM, PE: 4, Xbar: 1024, Connect: 1, TileNum: 6
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 41 ---
+Type: SRAM, PE: 4, Xbar: 1024, Connect: 3, TileNum: 6
+area=4917617112.453476um^2
+power=854.4766229408154W
+latency=382501684.0ns
+f=1607267.8163099384
+
+--- Config 42 ---
+Type: SRAM, PE: 4, Xbar: 2048, Connect: 0, TileNum: 4
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 43 ---
+Type: SRAM, PE: 4, Xbar: 2048, Connect: 1, TileNum: 4
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 44 ---
+Type: SRAM, PE: 4, Xbar: 2048, Connect: 3, TileNum: 4
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 45 ---
+Type: SRAM, PE: 8, Xbar: 128, Connect: 0, TileNum: 23
+area=3781117031.426608um^2
+power=371.9407420497707W
+latency=269786233.6ns
+f=379414.2674085495
+
+--- Config 46 ---
+Type: SRAM, PE: 8, Xbar: 128, Connect: 1, TileNum: 23
+area=3781117031.426608um^2
+power=371.9407463497707W
+latency=269786241.6ns
+f=379414.2830457627
+
+--- Config 47 ---
+Type: SRAM, PE: 8, Xbar: 128, Connect: 3, TileNum: 23
+area=3781117031.426608um^2
+power=371.94075684977065W
+latency=312017648.0ns
+f=438806.49677859625
+
+--- Config 48 ---
+Type: SRAM, PE: 8, Xbar: 256, Connect: 0, TileNum: 12
+area=4917617112.453476um^2
+power=854.4766229408154W
+latency=382737989.6ns
+f=1608260.7698094423
+
+--- Config 49 ---
+Type: SRAM, PE: 8, Xbar: 256, Connect: 1, TileNum: 12
+area=1672369605.1253884um^2
+power=275.49042438725905W
+latency=298451292.0ns
+f=137503.0201181003
+
+--- Config 50 ---
+Type: SRAM, PE: 8, Xbar: 256, Connect: 3, TileNum: 12
+area=1672369605.1253884um^2
+power=275.4904287872591W
+latency=316146146.0ns
+f=145655.42764678833
+
+--- Config 51 ---
+Type: SRAM, PE: 8, Xbar: 512, Connect: 0, TileNum: 6
+area=913368060.8756071um^2
+power=254.14945300854913W
+latency=389402020.79999995ns
+f=90392.66719262714
+
+--- Config 52 ---
+Type: SRAM, PE: 8, Xbar: 512, Connect: 1, TileNum: 6
+area=913368060.8756071um^2
+power=254.14945765854912W
+latency=377605500.79999995ns
+f=87654.31909752377
+
+--- Config 53 ---
+Type: SRAM, PE: 8, Xbar: 512, Connect: 3, TileNum: 6
+area=913368060.8756071um^2
+power=254.1494619785491W
+latency=390463712.0ns
+f=90639.12288593948
+
+--- Config 54 ---
+Type: SRAM, PE: 8, Xbar: 1024, Connect: 0, TileNum: 4
+area=749298621.7666019um^2
+power=316.17090551783434W
+latency=619669226.4ns
+f=146803.62033262532
+
+--- Config 55 ---
+Type: SRAM, PE: 8, Xbar: 1024, Connect: 1, TileNum: 4
+area=749298621.7666019um^2
+power=316.1709028978343W
+latency=573427014.8000001ns
+f=135848.54223057715
+
+--- Config 56 ---
+Type: SRAM, PE: 8, Xbar: 1024, Connect: 3, TileNum: 4
+area=749298621.7666019um^2
+power=316.17090960783435W
+latency=588526567.1999999ns
+f=139425.72611919206
+
+--- Config 57 ---
+Type: SRAM, PE: 8, Xbar: 2048, Connect: 0, TileNum: 3
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 58 ---
+Type: SRAM, PE: 8, Xbar: 2048, Connect: 1, TileNum: 3
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 59 ---
+Type: SRAM, PE: 8, Xbar: 2048, Connect: 3, TileNum: 3
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 60 ---
+Type: NVM, PE: 1, Xbar: 128, Connect: 0, TileNum: 184
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 61 ---
+Type: NVM, PE: 1, Xbar: 128, Connect: 1, TileNum: 184
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 62 ---
+Type: NVM, PE: 1, Xbar: 128, Connect: 3, TileNum: 184
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 63 ---
+Type: NVM, PE: 1, Xbar: 256, Connect: 0, TileNum: 92
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 64 ---
+Type: NVM, PE: 1, Xbar: 256, Connect: 1, TileNum: 92
+area=2677154502.08315um^2
+power=401.699461623644W
+latency=362359142.40000004ns
+f=389685.19690064184
+
+--- Config 65 ---
+Type: NVM, PE: 1, Xbar: 256, Connect: 3, TileNum: 92
+area=2677154502.08315um^2
+power=401.699461623644W
+latency=350739775.59999996ns
+f=377189.5959636009
+
+--- Config 66 ---
+Type: NVM, PE: 1, Xbar: 512, Connect: 0, TileNum: 46
+area=1008913512.3952616um^2
+power=188.42280418397752W
+latency=192107204.8ns
+f=36520.024011911795
+
+--- Config 67 ---
+Type: NVM, PE: 1, Xbar: 512, Connect: 1, TileNum: 46
+area=1008913512.3952616um^2
+power=188.42283518397753W
+latency=187388636.80000004ns
+f=35623.019181019634
+
+--- Config 68 ---
+Type: NVM, PE: 1, Xbar: 512, Connect: 3, TileNum: 46
+area=1008913512.3952616um^2
+power=188.42278118397752W
+latency=194584525.60000002ns
+f=36990.96391115616
+
+--- Config 69 ---
+Type: NVM, PE: 1, Xbar: 1024, Connect: 0, TileNum: 24
+area=462552567.1385071um^2
+power=93.84965096100262W
+latency=111330056.00000001ns
+f=4832.881926438837
+
+--- Config 70 ---
+Type: NVM, PE: 1, Xbar: 1024, Connect: 1, TileNum: 24
+area=462552567.1385071um^2
+power=93.84964686100263W
+latency=110504414.4ns
+f=4797.0402872542445
+
+--- Config 71 ---
+Type: NVM, PE: 1, Xbar: 1024, Connect: 3, TileNum: 24
+area=462552567.1385071um^2
+power=93.84966176100262W
+latency=104724103.2ns
+f=4546.115416135433
+
+--- Config 72 ---
+Type: NVM, PE: 1, Xbar: 2048, Connect: 0, TileNum: 12
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 73 ---
+Type: NVM, PE: 1, Xbar: 2048, Connect: 1, TileNum: 12
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 74 ---
+Type: NVM, PE: 1, Xbar: 2048, Connect: 3, TileNum: 12
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 75 ---
+Type: NVM, PE: 2, Xbar: 128, Connect: 0, TileNum: 92
+area=4917617112.453476um^2
+power=854.4766229408154W
+latency=382502116.0ns
+f=1607269.6315691276
+
+--- Config 76 ---
+Type: NVM, PE: 2, Xbar: 128, Connect: 1, TileNum: 92
+area=4917617112.453476um^2
+power=854.4766229408154W
+latency=382738041.6ns
+f=1608260.988312863
+
+--- Config 77 ---
+Type: NVM, PE: 2, Xbar: 128, Connect: 3, TileNum: 92
+area=4917617112.453476um^2
+power=854.4766229408154W
+latency=376014214.0ns
+f=1580007.5396198202
+
+--- Config 78 ---
+Type: NVM, PE: 2, Xbar: 256, Connect: 0, TileNum: 46
+area=1872028036.7803385um^2
+power=395.49839514657555W
+latency=214225604.8ns
+f=158609.2282254707
+
+--- Config 79 ---
+Type: NVM, PE: 2, Xbar: 256, Connect: 1, TileNum: 46
+area=1872028036.7803385um^2
+power=395.4984261465755W
+latency=209035177.60000002ns
+f=154766.33066721988
+
+--- Config 80 ---
+Type: NVM, PE: 2, Xbar: 256, Connect: 3, TileNum: 46
+area=1872028036.7803385um^2
+power=395.49837214657555W
+latency=221657447.20000002ns
+f=164111.63651100648
+
+--- Config 81 ---
+Type: NVM, PE: 2, Xbar: 512, Connect: 0, TileNum: 23
+area=816226145.6725262um^2
+power=189.7948853694468W
+latency=126105107.2ns
+f=19535.641756397108
+
+--- Config 82 ---
+Type: NVM, PE: 2, Xbar: 512, Connect: 1, TileNum: 23
+area=816226145.6725262um^2
+power=189.7948896694468W
+latency=126105115.2ns
+f=19535.643438321746
+
+--- Config 83 ---
+Type: NVM, PE: 2, Xbar: 512, Connect: 3, TileNum: 23
+area=816226145.6725262um^2
+power=189.7949001694468W
+latency=137193814.40000004ns
+f=21253.456563484317
+
+--- Config 84 ---
+Type: NVM, PE: 2, Xbar: 1024, Connect: 0, TileNum: 12
+area=417348355.61071444um^2
+power=95.85191337181912W
+latency=103337518.8ns
+f=4133.876738108353
+
+--- Config 85 ---
+Type: NVM, PE: 2, Xbar: 1024, Connect: 1, TileNum: 12
+area=417348355.61071444um^2
+power=95.85191877181913W
+latency=99090828.0ns
+f=3963.9938781493215
+
+--- Config 86 ---
+Type: NVM, PE: 2, Xbar: 1024, Connect: 3, TileNum: 12
+area=417348355.61071444um^2
+power=95.85194297181913W
+latency=104517264.80000001ns
+f=4181.072161684293
+
+--- Config 87 ---
+Type: NVM, PE: 2, Xbar: 2048, Connect: 0, TileNum: 6
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 88 ---
+Type: NVM, PE: 2, Xbar: 2048, Connect: 1, TileNum: 6
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 89 ---
+Type: NVM, PE: 2, Xbar: 2048, Connect: 3, TileNum: 6
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 90 ---
+Type: NVM, PE: 4, Xbar: 128, Connect: 0, TileNum: 46
+area=4095301980.4371934um^2
+power=841.8618748543022W
+latency=258462404.79999998ns
+f=891095.3027981555
+
+--- Config 91 ---
+Type: NVM, PE: 4, Xbar: 128, Connect: 1, TileNum: 46
+area=4095301980.4371934um^2
+power=841.8619058543021W
+latency=252328259.2ns
+f=869946.7722974031
+
+--- Config 92 ---
+Type: NVM, PE: 4, Xbar: 128, Connect: 3, TileNum: 46
+area=4095301980.4371934um^2
+power=841.8618518543021W
+latency=275803290.4ns
+f=950881.0770658872
+
+--- Config 93 ---
+Type: NVM, PE: 4, Xbar: 256, Connect: 0, TileNum: 23
+area=1670746336.7009406um^2
+power=393.66363552730706W
+latency=173998816.0ns
+f=114441.12265813521
+
+--- Config 94 ---
+Type: NVM, PE: 4, Xbar: 256, Connect: 1, TileNum: 23
+area=1670746336.7009406um^2
+power=393.66363982730707W
+latency=173998824.0ns
+f=114441.1291698758
+
+--- Config 95 ---
+Type: NVM, PE: 4, Xbar: 256, Connect: 3, TileNum: 23
+area=1670746336.7009406um^2
+power=393.66365032730704W
+latency=195468425.60000002ns
+f=128561.9490128055
+
+--- Config 96 ---
+Type: NVM, PE: 4, Xbar: 512, Connect: 0, TileNum: 12
+area=771765405.2569485um^2
+power=190.4417378258135W
+latency=167274418.4ns
+f=24585.382623577858
+
+--- Config 97 ---
+Type: NVM, PE: 4, Xbar: 512, Connect: 1, TileNum: 12
+area=771765405.2569485um^2
+power=190.44174492581348W
+latency=167274434.4ns
+f=24585.38589178539
+
+--- Config 98 ---
+Type: NVM, PE: 4, Xbar: 512, Connect: 3, TileNum: 12
+area=771765405.2569485um^2
+power=190.4417493258135W
+latency=175532104.4ns
+f=25799.068687676325
+
+--- Config 99 ---
+Type: NVM, PE: 4, Xbar: 1024, Connect: 0, TileNum: 6
+area=410004718.65276134um^2
+power=96.59632940552328W
+latency=190749297.60000002ns
+f=7554.6165581803125
+
+--- Config 100 ---
+Type: NVM, PE: 4, Xbar: 1024, Connect: 1, TileNum: 6
+area=410004718.65276134um^2
+power=96.59633405552327W
+latency=186502524.79999995ns
+f=7386.423685690479
+
+--- Config 101 ---
+Type: NVM, PE: 4, Xbar: 1024, Connect: 3, TileNum: 6
+area=410004718.65276134um^2
+power=96.59633837552327W
+latency=191810988.8ns
+f=7596.665491417048
+
+--- Config 102 ---
+Type: NVM, PE: 4, Xbar: 2048, Connect: 0, TileNum: 4
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 103 ---
+Type: NVM, PE: 4, Xbar: 2048, Connect: 1, TileNum: 4
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 104 ---
+Type: NVM, PE: 4, Xbar: 2048, Connect: 3, TileNum: 4
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 105 ---
+Type: NVM, PE: 8, Xbar: 128, Connect: 0, TileNum: 23
+area=3889723113.6794147um^2
+power=838.4236948326602W
+latency=269786233.6ns
+f=879836.5840241337
+
+--- Config 106 ---
+Type: NVM, PE: 8, Xbar: 128, Connect: 1, TileNum: 23
+area=3889723113.6794147um^2
+power=838.4236991326602W
+latency=269786241.6ns
+f=879836.6146264151
+
+--- Config 107 ---
+Type: NVM, PE: 8, Xbar: 128, Connect: 3, TileNum: 23
+area=3889723113.6794147um^2
+power=838.4237096326602W
+latency=312017648.0ns
+f=1017563.2120078614
+
+--- Config 108 ---
+Type: NVM, PE: 8, Xbar: 256, Connect: 0, TileNum: 12
+area=1624137012.9461882um^2
+power=393.50877778249037W
+latency=298451276.0ns
+f=190743.84291693845
+
+--- Config 109 ---
+Type: NVM, PE: 8, Xbar: 256, Connect: 1, TileNum: 12
+area=1624137012.9461882um^2
+power=393.5087848824904W
+latency=298451292.0ns
+f=190743.85658428632
+
+--- Config 110 ---
+Type: NVM, PE: 8, Xbar: 256, Connect: 3, TileNum: 12
+area=1624137012.9461882um^2
+power=393.5087892824904W
+latency=316146146.0ns
+f=202052.85560155415
+
+--- Config 111 ---
+Type: NVM, PE: 8, Xbar: 512, Connect: 0, TileNum: 6
+area=782878194.2260069um^2
+power=196.2320647645388W
+latency=389402020.79999995ns
+f=59822.198724038644
+
+--- Config 112 ---
+Type: NVM, PE: 8, Xbar: 512, Connect: 1, TileNum: 6
+area=782878194.2260069um^2
+power=196.23206941453878W
+latency=377605500.79999995ns
+f=58009.9502232244
+
+--- Config 113 ---
+Type: NVM, PE: 8, Xbar: 512, Connect: 3, TileNum: 6
+area=782878194.2260069um^2
+power=196.23207373453877W
+latency=390463712.0ns
+f=59985.30463078123
+
+--- Config 114 ---
+Type: NVM, PE: 8, Xbar: 1024, Connect: 0, TileNum: 4
+area=528149824.42900056um^2
+power=125.06412722381678W
+latency=619669226.4ns
+f=40930.761582842846
+
+--- Config 115 ---
+Type: NVM, PE: 8, Xbar: 1024, Connect: 1, TileNum: 4
+area=528149824.42900056um^2
+power=125.0641246038168W
+latency=573427014.8000001ns
+f=37876.3426297593
+
+--- Config 116 ---
+Type: NVM, PE: 8, Xbar: 1024, Connect: 3, TileNum: 4
+area=528149824.42900056um^2
+power=125.06413131381679W
+latency=588526567.1999999ns
+f=38873.7093416115
+
+--- Config 117 ---
+Type: NVM, PE: 8, Xbar: 2048, Connect: 0, TileNum: 3
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 118 ---
+Type: NVM, PE: 8, Xbar: 2048, Connect: 1, TileNum: 3
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+
+--- Config 119 ---
+Type: NVM, PE: 8, Xbar: 2048, Connect: 3, TileNum: 3
+area=0um^2
+power=0W
+latency=0ns
+f=0.0
+

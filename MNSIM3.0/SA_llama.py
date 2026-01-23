@@ -21,6 +21,8 @@ import pandas as pd
 from mapping import *
 from mapping_test import mapping_test
 
+OUTPUT_LOG_FILE = "SA.txt"
+
 class SA:
     def __init__(self, T0=100, Tf=10, alpha=0.99, k=1, a=1, b=1, d=1, e=1, temp_flag=1, area_des=1000000000, power_des=1000, latency_des=1000000000, energy_des=10000000000, temp_des=1000,mix_mode='2'):
         self.alpha = alpha
@@ -225,8 +227,10 @@ class SA:
     def generate_new_layer(self, layernum, tile_type_layer, PE_num_layer, xbar_size_layer, tile_connection, topology, c):
         seach = random.random()
         if seach <= 0.1 and self.hetro == 1:#随机选择一个层，改变单元类型
-            layer = int(random.random() * layernum)  
-            if tile_type_layer[layer] == 'SRAM' :
+            layer = int(random.random() * layernum)
+            if self.net == 'LLaMa-decoder1B' and (layer == 1 or layer == 2):
+                tile_type_layer[layer] = 'SRAM'
+            elif tile_type_layer[layer] == 'SRAM' :
                 tile_type_layer[layer] = 'NVM'
             else :
                 tile_type_layer[layer] = 'SRAM'
@@ -280,7 +284,9 @@ class SA:
             search_tile_0 = int(random.random() * layertilenum[search])
         search_choice = random.random()
         if search_choice <= 0.1 and self.hetro == 1:#随机选择一个层，改变单元类型
-            if tile_type_layer_tile[search][search_tile] == 'SRAM' :
+            if self.net == 'LLaMa-decoder1B' and (search == 1 or search == 2):
+                tile_type_layer_tile[search][search_tile]= 'SRAM'
+            elif tile_type_layer_tile[search][search_tile] == 'SRAM' :
                 tile_type_layer_tile[search][search_tile] = 'NVM'
             else :
                 tile_type_layer_tile[search][search_tile]= 'SRAM'
@@ -335,7 +341,9 @@ class SA:
             search_tile_0 = int(random.random() * layertilenum[search])
         search_choice = random.random()
         if search_choice < 0.1*self.hetro:#随机选择一个层，改变单元类型
-            if tile_type_layer_tile[search][search_tile] == 'SRAM' :
+            if self.net == 'LLaMa-decoder1B' and (search == 1 or search == 2):
+                tile_type_layer_tile[search][search_tile]= 'SRAM'
+            elif tile_type_layer_tile[search][search_tile] == 'SRAM' :
                 tile_type_layer_tile[search][search_tile] = 'NVM'
             else :
                 tile_type_layer_tile[search][search_tile]= 'SRAM'
@@ -389,7 +397,9 @@ class SA:
             search_tile_0 = int(random.random() * layertilenum[search])
         search_choice = random.random()
         if search_choice <= 0.1 and self.hetro == 1:#随机选择一个层，改变单元类型
-            if tile_type_layer_tile[search][search_tile] == 'SRAM' :
+            if self.net == 'LLaMa-decoder1B' and (search == 1 or search == 2):
+                tile_type_layer_tile[search][search_tile]= 'SRAM'
+            elif tile_type_layer_tile[search][search_tile] == 'SRAM' :
                 tile_type_layer_tile[search][search_tile] = 'NVM'
             else :
                 tile_type_layer_tile[search][search_tile]= 'SRAM'
@@ -1051,11 +1061,11 @@ class SA:
                 area_str = parts[1].strip()
                 area_str = area_str.replace(' um^2', '')
                 area_floorplan = float(area_str)
-            if "Hardware energy:" in item:
-                parts = item.split(":")
-                energy_str = parts[1].strip()
-                energy_str = energy_str.replace(' nJ', '')
-                energy.append(float(energy_str))
+            # if "Hardware energy:" in item:
+            #     parts = item.split(":")
+            #     energy_str = parts[1].strip()
+            #     energy_str = energy_str.replace(' nJ', '')
+            #     energy.append(float(energy_str))
             if "Max Temp:" in item:              
                 parts = item.split(":")
                 temp_str = parts[1].strip()
@@ -1116,11 +1126,11 @@ class SA:
                 area_str = parts[1].strip()
                 area_str = area_str.replace(' um^2', '')
                 area_floorplan = float(area_str)
-            if "Hardware energy:" in item:
-                parts = item.split(":")
-                energy_str = parts[1].strip()
-                energy_str = energy_str.replace(' nJ', '')
-                energy.append(float(energy_str))
+            # if "Hardware energy:" in item:
+            #     parts = item.split(":")
+            #     energy_str = parts[1].strip()
+            #     energy_str = energy_str.replace(' nJ', '')
+            #     energy.append(float(energy_str))
             if "Max Temp:" in item:              
                 parts = item.split(":")
                 temp_str = parts[1].strip()
@@ -1240,7 +1250,7 @@ class SA:
             file.write(f"\n")
             file.write(f"c={self.c}\n")
             self.update_ini_file('./SimConfig.ini',self.tile_connection)
-        with open("SA.txt", "a") as file:  
+        with open(OUTPUT_LOG_FILE, "a") as file:  
             if layertilenum_flag:
                 self.layertilenum = [0 for _ in range(self.layernum)]
                 for i in range(self.tilenum):
@@ -1275,7 +1285,7 @@ class SA:
         self.tilenum, self.tile_type, self.PE_num, self.xbar_size, self.mapping = self.generate_new_layer_config(self.layernum, self.tile_type_layer, self.PE_num_layer, self.xbar_size_layer, structure_file, self.tile_connection, self.topology, self.c)
         self.area, self.power, self.latency, self.energy= self.HMSIM(self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping, self.tile_connection, self.topology, self.c)
         device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, temp=0, f=(self.func(self.area, self.power, self.latency, self.energy)), time = time.time()- start_time, tilenum = self.tilenum,tile_type = self.tile_type_layer, PE_num = self.PE_num_layer, xbar_size = self.xbar_size_layer, tile_connect = self.tile_connection, topology = self.topology, c = self.c)
-        device1.write_to_file("SA.txt")
+        device1.write_to_file(OUTPUT_LOG_FILE)
         self.history['f'].append(self.func(self.area, self.power, self.latency, self.energy))
         self.history['T'].append(self.T)
         while self.T > self.Tf:
@@ -1308,11 +1318,11 @@ class SA:
             current_best = self.best()
             self.most_best.append((self.T, current_best))
             device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, temp=0, f=(self.func(self.area, self.power, self.latency, self.energy)), time = time.time()- start_time, tilenum = self.tilenum, tile_type = self.tile_type_layer, PE_num = self.PE_num_layer, xbar_size = self.xbar_size_layer, tile_connect = self.tile_connection, topology = self.topology, c = self.c)
-            device1.write_to_file("SA.txt")
+            device1.write_to_file(OUTPUT_LOG_FILE)
         self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping = self.generate_new_layer_config(self.layernum, self.tile_type_layer, self.PE_num_layer, self.xbar_size_layer, structure_file, self.tile_connection, self.topology, self.c)
         self.area, self.power, self.latency, self.energy = self.HMSIM(self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping, self.tile_connection, self.topology, self.c)
         device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, temp=0, f=(self.func(self.area, self.power, self.latency, self.energy)), time = time.time()- start_time, tilenum = self.tilenum,tile_type = self.tile_type_layer, PE_num = self.PE_num_layer, xbar_size = self.xbar_size_layer, tile_connect = self.tile_connection, topology = self.topology, c = self.c)
-        device1.write_to_file("SA.txt")
+        device1.write_to_file(OUTPUT_LOG_FILE)
         self.HMSIM_SimConfig_self('mix_tileinfo.ini')
         print(f"Optimal F={self.most_best[-1][1]}")
 
@@ -1337,7 +1347,7 @@ class SA:
         self.tilenum, self.tile_type, self.PE_num, self.xbar_size, self.mapping = self.generate_new_layer_config(self.layernum, self.tile_type_layer, self.PE_num_layer, self.xbar_size_layer, structure_file, self.tile_connection, self.topology, self.c)
         self.area, self.power, self.latency, self.energy, self.temp, self.core ,self.if_central = self.HMSIM_temp(self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping, self.tile_connection, self.topology, self.c)
         device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, temp=self.temp, f=(self.func_temp_1(self.area, self.power, self.latency, self.energy, self.temp)), time = time.time()- start_time, tilenum = self.tilenum,tile_type = self.tile_type_layer, PE_num = self.PE_num_layer, xbar_size = self.xbar_size_layer, tile_connect = self.tile_connection, topology = self.topology, c = self.c)
-        device1.write_to_file("SA.txt")
+        device1.write_to_file(OUTPUT_LOG_FILE)
         self.history['f'].append(self.func_temp_1(self.area, self.power, self.latency, self.energy, self.temp))
         self.history['T'].append(self.T)
         while self.T > self.Tf:
@@ -1420,11 +1430,11 @@ class SA:
             current_best = self.best()
             self.most_best.append((self.T, current_best))
             device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, temp=self.temp, f=(self.func_temp_1(self.area, self.power, self.latency, self.energy, self.temp)), time = time.time()- start_time, tilenum = self.tilenum, tile_type = self.tile_type_layer, PE_num = self.PE_num_layer, xbar_size = self.xbar_size_layer, tile_connect = self.tile_connection, topology = self.topology, c = self.c)
-            device1.write_to_file("SA.txt")
+            device1.write_to_file(OUTPUT_LOG_FILE)
         self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping = self.generate_new_layer_config(self.layernum, self.tile_type_layer, self.PE_num_layer, self.xbar_size_layer, structure_file, self.tile_connection, self.topology, self.c)
         self.area, self.power, self.latency, self.energy = self.HMSIM(self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping, self.tile_connection, self.topology, self.c)
         device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, temp=self.temp, f=(self.func_temp_1(self.area, self.power, self.latency, self.energy, self.temp)), time = time.time()- start_time, tilenum = self.tilenum,tile_type = self.tile_type_layer, PE_num = self.PE_num_layer, xbar_size = self.xbar_size_layer, tile_connect = self.tile_connection, topology = self.topology, c = self.c)
-        device1.write_to_file("SA.txt")
+        device1.write_to_file(OUTPUT_LOG_FILE)
         self.HMSIM_SimConfig_self('mix_tileinfo.ini')
         print(f"Optimal F={self.most_best[-1][1]}")
 
@@ -1452,7 +1462,7 @@ class SA:
         self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping= self.generate_new_tile_config(self.layertilenum, self.tile_type_layer_tile, self.PE_num_layer_tile, self.xbar_size_layer_tile, self.tile_connection, self.topology, self.c)
         self.area, self.power, self.latency, self.energy = self.HMSIM(self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping, self.tile_connection, self.topology, self.c)
         device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, f=(self.func(self.area, self.power, self.latency, self.energy)), time = time.time()- start_time)
-        device1.write_to_file("SA.txt")
+        device1.write_to_file(OUTPUT_LOG_FILE)
         self.history['f'].append(self.func(self.area, self.power, self.latency, self.energy))
         self.history['T'].append(self.T)
         stepnum = 0
@@ -1495,13 +1505,13 @@ class SA:
             current_best = self.best()
             self.most_best.append((self.T, current_best))
             device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, f=(self.func(self.area, self.power, self.latency, self.energy)), time = time.time()- start_time)
-            device1.write_to_file("SA.txt")
+            device1.write_to_file(OUTPUT_LOG_FILE)
         self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping = self.generate_new_tile_config(self.layertilenum, self.tile_type_layer_tile, self.PE_num_layer_tile, self.xbar_size_layer_tile, self.tile_connection, self.topology, self.c)
         modify_sim_ini('SimConfig.ini',0)
         self.area, self.power, self.latency, self.energy = self.HMSIM(self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping, self.tile_connection, self.topology, self.c)
         device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, f=(self.func(self.area, self.power, self.latency, self.energy)), time = time.time()- start_time)
         modify_sim_ini('SimConfig.ini',0)
-        device1.write_to_file("SA.txt")
+        device1.write_to_file(OUTPUT_LOG_FILE)
         self.HMSIM_SimConfig_self('mix_tileinfo.ini')
         print(f"Optimal F={self.most_best[-1][1]}")
 
@@ -1539,7 +1549,7 @@ class SA:
         if (self.temp_flag == 1):
             self.temp_des = self.temp
         device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, temp=self.temp, f=(self.func_temp(self.area, self.power, self.latency, self.energy, self.temp)), time = time.time()- start_time)
-        device1.write_to_file("SA.txt")
+        device1.write_to_file(OUTPUT_LOG_FILE)
         self.history['f'].append(self.func_temp(self.area, self.power, self.latency, self.energy, self.temp))
         self.history['T'].append(self.T)
         stepnum = 0
@@ -1816,11 +1826,11 @@ class SA:
             current_best = self.best()
             self.most_best.append((self.T, current_best))
             device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, temp=self.temp, f=(self.func_temp(self.area, self.power, self.latency, self.energy, self.temp)), time = time.time()- start_time)
-            device1.write_to_file("SA.txt")
+            device1.write_to_file(OUTPUT_LOG_FILE)
         self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping = self.generate_new_tile_config(self.layertilenum, self.tile_type_layer_tile, self.PE_num_layer_tile, self.xbar_size_layer_tile, self.tile_connection, self.topology, self.c)
         self.area, self.power, self.latency, self.energy, self.temp, self.core, self.if_central = self.HMSIM_temp(self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping, self.tile_connection, self.topology, self.c)
         device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, temp=self.temp, f=(self.func_temp(self.area, self.power, self.latency, self.energy, self.temp)), time = time.time()- start_time)
-        device1.write_to_file("SA.txt")
+        device1.write_to_file(OUTPUT_LOG_FILE)
         self.HMSIM_SimConfig_self('mix_tileinfo.ini')
         print(f"Optimal F={self.most_best[-1][1]}")
 
@@ -1840,7 +1850,7 @@ class SA:
         self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping= self.generate_new_tile_config(self.layertilenum, self.tile_type_layer_tile, self.PE_num_layer_tile, self.xbar_size_layer_tile, self.tile_connection, self.topology, self.c)
         self.area, self.power, self.latency, self.energy = self.HMSIM(self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping, self.tile_connection, self.topology, self.c)
         device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, f=(self.func(self.area, self.power, self.latency, self.energy)), time = time.time()- start_time)
-        device1.write_to_file("SA.txt")
+        device1.write_to_file(OUTPUT_LOG_FILE)
         self.history['f'].append(self.func(self.area, self.power, self.latency, self.energy))
         self.history['T'].append(self.T)
         stepnum = 0
@@ -1878,11 +1888,11 @@ class SA:
             current_best = self.best()
             self.most_best.append((self.T, current_best))
             device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, f=(self.func(self.area, self.power, self.latency, self.energy)), time = time.time()- start_time)
-            device1.write_to_file("SA.txt")
+            device1.write_to_file(OUTPUT_LOG_FILE)
         self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping = self.generate_new_tile_config(self.layertilenum, self.tile_type_layer_tile, self.PE_num_layer_tile, self.xbar_size_layer_tile, self.tile_connection, self.topology, self.c)
         self.area, self.power, self.latency, self.energy = self.HMSIM(self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping, self.tile_connection, self.topology, self.c)
         device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, f=(self.func(self.area, self.power, self.latency, self.energy)), time = time.time()- start_time)
-        device1.write_to_file("SA.txt")
+        device1.write_to_file(OUTPUT_LOG_FILE)
         self.HMSIM_SimConfig_self('mix_tileinfo.ini')
         print(f"Optimal F={self.most_best[-1][1]}")
 
@@ -1919,7 +1929,7 @@ class SA:
         if (self.e == 1):
             self.energy_des = self.energy
         device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, f=(self.func(self.area, self.power, self.latency, self.energy)), time = time.time()- start_time)
-        device1.write_to_file("SA.txt")
+        device1.write_to_file(OUTPUT_LOG_FILE)
         self.history['f'].append(self.func(self.area, self.power, self.latency, self.energy))
         self.history['T'].append(self.T)
         stepnum = 0
@@ -1957,11 +1967,11 @@ class SA:
             current_best = self.best()
             self.most_best.append((self.T, current_best))
             device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, f=(self.func(self.area, self.power, self.latency, self.energy)), time = time.time()- start_time)
-            device1.write_to_file("SA.txt")
+            device1.write_to_file(OUTPUT_LOG_FILE)
         self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping = self.generate_new_tile_config(self.layertilenum, self.tile_type_layer_tile, self.PE_num_layer_tile, self.xbar_size_layer_tile, self.tile_connection, self.topology, self.c)
         self.area, self.power, self.latency, self.energy = self.HMSIM(self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping, self.tile_connection, self.topology, self.c)
         device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, f=(self.func(self.area, self.power, self.latency, self.energy)), time = time.time()- start_time)
-        device1.write_to_file("SA.txt")
+        device1.write_to_file(OUTPUT_LOG_FILE)
         self.HMSIM_SimConfig_self('mix_tileinfo.ini')
         if self.T < self.T0:
             print(f"Optimal F={self.most_best[-1][1]}")
@@ -2001,7 +2011,7 @@ class SA:
         if (self.temp_flag == 1):
             self.temp_des = self.temp
         device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, temp=self.temp, f=(self.func_temp_1(self.area, self.power, self.latency, self.energy, self.temp)), time = time.time()- start_time)
-        device1.write_to_file("SA.txt")
+        device1.write_to_file(OUTPUT_LOG_FILE)
         self.history['f'].append(self.func_temp_1(self.area, self.power, self.latency, self.energy, self.temp))
         self.history['T'].append(self.T)
         stepnum = 0
@@ -2039,11 +2049,11 @@ class SA:
             current_best = self.best()
             self.most_best.append((self.T, current_best))
             device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, temp=self.temp, f=(self.func_temp_1(self.area, self.power, self.latency, self.energy, self.temp)), time = time.time()- start_time)
-            device1.write_to_file("SA.txt")
+            device1.write_to_file(OUTPUT_LOG_FILE)
         self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping = self.generate_new_tile_config(self.layertilenum, self.tile_type_layer_tile, self.PE_num_layer_tile, self.xbar_size_layer_tile, self.tile_connection, self.topology, self.c)
         self.area, self.power, self.latency, self.energy, self.temp, self.core, self.if_central = self.HMSIM_temp(self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping, self.tile_connection, self.topology, self.c)
         device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, temp=self.temp, f=(self.func_temp_1(self.area, self.power, self.latency, self.energy, self.temp)), time = time.time()- start_time)
-        device1.write_to_file("SA.txt")
+        device1.write_to_file(OUTPUT_LOG_FILE)
         self.HMSIM_SimConfig_self('mix_tileinfo.ini')
         if self.T < self.T0:
             print(f"Optimal F={self.most_best[-1][1]}")
@@ -2072,7 +2082,7 @@ class SA:
         if (self.e == 1):
             self.energy_des = self.energy
         device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, f=(self.func(self.area, self.power, self.latency, self.energy)), time = time.time()- start_time)
-        device1.write_to_file("SA.txt")
+        device1.write_to_file(OUTPUT_LOG_FILE)
         self.history['f'].append(self.func(self.area, self.power, self.latency, self.energy))
         self.history['T'].append(self.T)
         stepnum = 0
@@ -2110,11 +2120,11 @@ class SA:
             current_best = self.best()
             self.most_best.append((self.T, current_best))
             device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, f=(self.func(self.area, self.power, self.latency, self.energy)), time = time.time()- start_time)
-            device1.write_to_file("SA.txt")
+            device1.write_to_file(OUTPUT_LOG_FILE)
         self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping = self.generate_new_tile_config(self.layertilenum, self.tile_type_layer_tile, self.PE_num_layer_tile, self.xbar_size_layer_tile, self.tile_connection, self.topology, self.c)
         self.area, self.power, self.latency, self.energy = self.HMSIM(self.tilenum, self.tile_type,  self.PE_num, self.xbar_size, self.mapping, self.tile_connection, self.topology, self.c)
         device1 = Device(T=self.T, area=self.area, power=self.power, latency=self.latency, energy=self.energy, f=(self.func(self.area, self.power, self.latency, self.energy)), time = time.time()- start_time)
-        device1.write_to_file("SA.txt")
+        device1.write_to_file(OUTPUT_LOG_FILE)
         self.HMSIM_SimConfig_self('mix_tileinfo.ini')
         if self.T < self.T0:
             print(f"Optimal F={self.most_best[-1][1]}")
@@ -2363,10 +2373,10 @@ def SA_run_temp(network='alexnet', dataset='Imagenet', tiletype='NVM',penum=1, x
 def SA_run(network='MM_bert_mini', dataset='cifar10', tiletype='SRAM',penum=1, xbarsize=256, tile_connection=1, topology=0,c=2,hetro=1, type='hetro',T0=100, Tf=10, alpha=0.99, k=1, area_flag=1, power_flag=1, latency_flag=1, energy_flag=0, area_des=400000000, power_des=90, latency_des=25000000, energy_des=1000000000,mix_mode='2'):
     sa = SA(T0=T0, Tf=Tf, alpha=0.99, k=k, a=area_flag, b=power_flag, d=latency_flag, e=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
     modify_sim_ini('SimConfig.ini',0)
-    #sa.Tf = 100
-    sa.hetro=hetro
-    sa.run_tile_all_space(network,dataset,tiletype, penum, xbarsize, tile_connection, topology, c)
-    sa.HMSIM_SimConfig_self(f'mix_tileinfo_{type}_all.ini')
+    # #sa.Tf = 100
+    # sa.hetro=hetro
+    # sa.run_tile_all_space(network,dataset,tiletype, penum, xbarsize, tile_connection, topology, c)
+    # sa.HMSIM_SimConfig_self(f'mix_tileinfo_{type}_all.ini')
     sa.T = sa.T0
     sa.Tf = Tf
     sa.step = 0
@@ -2389,8 +2399,8 @@ def SA_run(network='MM_bert_mini', dataset='cifar10', tiletype='SRAM',penum=1, x
 def SA_run_0(network='MM_bert_mini', dataset='cifar10', tiletype='SRAM',penum=1, xbarsize=256, tile_connection=1, topology=0,c=2,hetro=1, type='hetro',T0=100, Tf=10, alpha=0.99, k=1, area_flag=1, power_flag=1, latency_flag=1, energy_flag=0, area_des=400000000, power_des=90, latency_des=25000000, energy_des=1000000000,mix_mode='2'):
     sa = SA(T0=T0, Tf=Tf, alpha=0.99, k=k, a=area_flag, b=power_flag, d=latency_flag, e=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
     sa.hetro=hetro
-    sa.run_tile_all_space(network,dataset,tiletype, penum, xbarsize, tile_connection, topology, c)
-    sa.HMSIM_SimConfig_self(f'mix_tileinfo_{type}_all.ini')
+    # sa.run_tile_all_space(network,dataset,tiletype, penum, xbarsize, tile_connection, topology, c)
+    # sa.HMSIM_SimConfig_self(f'mix_tileinfo_{type}_all.ini')
     sa.T = sa.T0
     sa.Tf = Tf
     sa.step = 0
@@ -2436,9 +2446,9 @@ def SA_run_resnet18_111():
     energy_des = 1000000000
     network = 'resnet18'
     dataset = 'Imagenet'
-    SA_run(network=network, dataset=dataset, tiletype='NVM',penum=1, xbarsize=512, tile_connection=3, topology=0,c=2,hetro=1, type='hetro',T0=100, Tf=10, alpha=0.99, k=1, area_flag=area_flag, power_flag=power_flag, latency_flag=latency_flag, energy_flag=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
+    # SA_run(network=network, dataset=dataset, tiletype='NVM',penum=1, xbarsize=512, tile_connection=3, topology=0,c=2,hetro=1, type='hetro',T0=100, Tf=10, alpha=0.99, k=1, area_flag=area_flag, power_flag=power_flag, latency_flag=latency_flag, energy_flag=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
     SA_run(network=network, dataset=dataset, tiletype='NVM',penum=1, xbarsize=512, tile_connection=3, topology=0,c=2,hetro=0, type='nvm',T0=100, Tf=10, alpha=0.99, k=1, area_flag=area_flag, power_flag=power_flag, latency_flag=latency_flag, energy_flag=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
-    SA_run(network=network, dataset=dataset, tiletype='SRAM',penum=1, xbarsize=512, tile_connection=3, topology=0,c=2,hetro=0, type='sram',T0=100, Tf=10, alpha=0.99, k=1, area_flag=area_flag, power_flag=power_flag, latency_flag=latency_flag, energy_flag=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
+    # SA_run(network=network, dataset=dataset, tiletype='SRAM',penum=1, xbarsize=512, tile_connection=3, topology=0,c=2,hetro=0, type='sram',T0=100, Tf=10, alpha=0.99, k=1, area_flag=area_flag, power_flag=power_flag, latency_flag=latency_flag, energy_flag=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
 
 def SA_run_alexnet_011():
     area_flag = 0
@@ -2528,9 +2538,35 @@ def SA_run_decoder_111():
     #SA_run_0(network=network, dataset=dataset, tiletype='NVM',penum=1, xbarsize=256, tile_connection=1, topology=0,c=2,hetro=0, type='nvm',T0=100, Tf=10, alpha=0.99, k=1, area_flag=area_flag, power_flag=power_flag, latency_flag=latency_flag, energy_flag=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
     #SA_run_0(network=network, dataset=dataset, tiletype='SRAM',penum=1, xbarsize=256, tile_connection=1, topology=0,c=2,hetro=0, type='sram',T0=100, Tf=10, alpha=0.99, k=1, area_flag=area_flag, power_flag=power_flag, latency_flag=latency_flag, energy_flag=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-SA_run_resnet18_111()
-#SA_run_alexnet_111()
-# SA_run_decoder_111()
+def SA_run_llama_decoder_001(sel=0):
+    area_flag = 0
+    power_flag = 0
+    latency_flag = 1
+    energy_flag = 0
+    area_des = 858000000
+    power_des = 500
+    latency_des = 5000000000
+    energy_des = 1000000000
+    network = 'LLaMa-decoder1B'
+    dataset = 'cifar10'
+    if sel == 0:
+        SA_run(network=network, dataset=dataset, tiletype='SRAM',penum=1, xbarsize=2048, tile_connection=1, topology=0,c=2,hetro=1, type='hetro',T0=100, Tf=10, alpha=0.99, k=1, area_flag=area_flag, power_flag=power_flag, latency_flag=latency_flag, energy_flag=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
+    elif sel==1:
+        SA_run_0(network=network, dataset=dataset, tiletype='NVM',penum=1, xbarsize=128, tile_connection=1, topology=0,c=2,hetro=0, type='nvm',T0=100, Tf=10, alpha=0.99, k=1, area_flag=area_flag, power_flag=power_flag, latency_flag=latency_flag, energy_flag=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
+    elif sel==2:
+        SA_run_0(network=network, dataset=dataset, tiletype='SRAM',penum=1, xbarsize=128, tile_connection=1, topology=0,c=2,hetro=0, type='sram',T0=100, Tf=10, alpha=0.99, k=1, area_flag=area_flag, power_flag=power_flag, latency_flag=latency_flag, energy_flag=energy_flag, area_des=area_des, power_des=power_des, latency_des=latency_des, energy_des=energy_des,mix_mode='2')
 
-# 使用示例
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
+# SA_run_resnet18_111()
+# SA_run_alexnet_111()
+
+
+
+OUTPUT_LOG_FILE = "SA_llama1B_001_heter.txt"
+SA_run_llama_decoder_001(sel=0)
+
+
+
+# # 使用示例
